@@ -1,0 +1,221 @@
+{
+  "CardDeck": [
+    {
+      "Name": "Open Wide!",
+      "Actions": [
+        { "ActionType": 1 },
+        { "ActionType": 1 },
+        { "ActionType": 3 }
+      ]
+    },
+    {
+      "Name": "Cubes Have Feelings Too",
+      "Actions": [
+        { "ActionType": 4 },
+        { "ActionType": 3 }
+      ]
+    },
+    {
+      "Name": "Acid Burp",
+      "Actions": [
+        { "ActionType": 2 },
+        { "ActionType": 3 }
+      ]
+    },
+    {
+      "Name": "Sugar Rush",
+      "Actions": [
+        { "ActionType": 1 },
+        { "ActionType": 1 }
+      ]
+    },
+    {
+      "Name": "Combat Cubed",
+      "Actions": [
+        { "ActionType": 2 },
+        { "ActionType": 2 },
+        { "ActionType": 2 }
+      ]
+    },
+    {
+      "Name": "Arcane Appetizer",
+      "Actions": [
+        { "ActionType": 2 },
+        { "ActionType": 2 },
+        { "ActionType": 1 }
+      ]
+    },
+    {
+      "Name": "Cleric a la Slime",
+      "Actions": [
+        { "ActionType": 2 },
+        { "ActionType": 2 },
+        { "ActionType": 4 }
+      ]
+    },
+    {
+      "Name": "Fastest Cube Alive",
+      "Actions": [
+        { "ActionType": 2 },
+        { "ActionType": 1 },
+        { "ActionType": 4 }
+      ]
+    },
+    {
+      "Name": "Here I Come!",
+      "Actions": [
+        { "ActionType": 5 },
+        { "ActionType": 7 },
+        { "ActionType": 7 },
+        { "ActionType": 7 }
+      ]
+    },
+    {
+      "Name": "Cleric a la Slime",
+      "Actions": [
+        { "ActionType": 2 },
+        { "ActionType": 2 },
+        { "ActionType": 4 }
+      ]
+    },
+    {
+      "Name": "Acid Burp",
+      "Actions": [
+        { "ActionType": 2 },
+        { "ActionType": 3 }
+      ]
+    },
+    {
+      "Name": "Arcane Appetizer",
+      "Actions": [
+        { "ActionType": 2 },
+        { "ActionType": 2 },
+        { "ActionType": 1 }
+      ]
+    },
+    {
+      "Name": "Former Friends",
+      "Actions": [
+        { "ActionType": 0 },
+        { "ActionType": 0 }
+      ]
+    },
+    {
+      "Name": "Burped-Up Bones",
+      "Actions": [
+        { "ActionType": 5 },
+        { "ActionType": 2 },
+        { "ActionType": 2 },
+        { "ActionType": 0 },
+        { "ActionType": 0 },
+        { "ActionType": 0 }
+      ]
+    },
+    {
+      "Name": "Here I Come!",
+      "Actions": [
+        { "ActionType": 5 },
+        { "ActionType": 7 },
+        { "ActionType": 7 },
+        { "ActionType": 7 }
+      ]
+    },
+    {
+      "Name": "Hugs!",
+      "Actions": [
+        { "ActionType": 5 }
+      ]
+    },
+    {
+      "Name": "D6 of Doom",
+      "Actions": [
+        { "ActionType": 2 },
+        { "ActionType": 2 }
+      ]
+    },
+    {
+      "Name": "Combat Cubed",
+      "Actions": [
+        { "ActionType": 2 },
+        { "ActionType": 2 },
+        { "ActionType": 2 }
+      ]
+    },
+    {
+      "Name": "Slime Time",
+      "Actions": [
+        { "ActionType": 3 },
+        { "ActionType": 3 }
+      ]
+    },
+    {
+      "Name": "Combat Cubed",
+      "Actions": [
+        { "ActionType": 2 },
+        { "ActionType": 2 },
+        { "ActionType": 2 }
+      ]
+    },
+    {
+      "Name": "Burped-Up Bones",
+      "Actions": [
+        { "ActionType": 5 },
+        { "ActionType": 2 },
+        { "ActionType": 2 },
+        { "ActionType": 0 },
+        { "ActionType": 0 },
+        { "ActionType": 0 }
+      ]
+    },
+    {
+      "Name": "Hugs!",
+      "Actions": [
+        { "ActionType": 5 }
+      ]
+    },
+    {
+      "Name": "Fastest Cube Alive",
+      "Actions": [
+        { "ActionType": 2 },
+        { "ActionType": 1 },
+        { "ActionType": 4 }
+      ]
+    },
+    {
+      "Name": "Fastest Cube Alive",
+      "Actions": [
+        { "ActionType": 2 },
+        { "ActionType": 1 },
+        { "ActionType": 4 }
+      ]
+    },
+    {
+      "Name": "D6 of Doom",
+      "Actions": [
+        { "ActionType": 2 },
+        { "ActionType": 2 }
+      ]
+    },
+    {
+      "Name": "Sugar Rush",
+      "Actions": [
+        { "ActionType": 1 },
+        { "ActionType": 1 }
+      ]
+    },
+    {
+      "Name": "Slime Time",
+      "Actions": [
+        { "ActionType": 3 },
+        { "ActionType": 3 }
+      ]
+    },
+    {
+      "Name": "Cubes Have Feelings Too",
+      "Actions": [
+        { "ActionType": 4 },
+        { "ActionType": 3 }
+      ]
+    }
+  ]
+}

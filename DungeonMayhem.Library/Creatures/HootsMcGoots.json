@@ -1,0 +1,212 @@
+{
+    "CardDeck": [
+      {
+        "Name": "For My Next Trick...",
+        "Actions": [
+          { "ActionType": 5 },
+          { "ActionType": 2 },
+          { "ActionType": 3 }
+        ]
+      },
+      {
+        "Name": "For My Next Trick...",
+        "Actions": [
+          { "ActionType": 5 },
+          { "ActionType": 2 },
+          { "ActionType": 3 }
+        ]
+      },
+      {
+        "Name": "To The Face!",
+        "Actions": [
+          { "ActionType": 5 }
+        ]
+      },
+      {
+        "Name": "To The Face!",
+        "Actions": [
+          { "ActionType": 5 }
+        ]
+      },
+      {
+        "Name": "Owlbear Boogie",
+        "Actions": [
+          { "ActionType": 5 }
+        ]
+      },
+      {
+        "Name": "Owlbear Boogie",
+        "Actions": [
+          { "ActionType": 5 }
+        ]
+      },
+      {
+        "Name": "Grand Finale",
+        "Actions": [
+          { "ActionType": 2 },
+          { "ActionType": 2 },
+          { "ActionType": 2 }
+        ]
+      },
+      {
+        "Name": "Very Very Fast",
+        "Actions": [
+          { "ActionType": 2 },
+          { "ActionType": 3 }
+        ]
+      },
+      {
+        "Name": "The Hoots Fan Club",
+        "Actions": [
+          { "ActionType": 0 },
+          { "ActionType": 0 },
+          { "ActionType": 4 }
+        ]
+      },
+      {
+        "Name": "Send in the Clowns",
+        "Actions": [
+          { "ActionType": 0 },
+          { "ActionType": 3 }
+        ]
+      },
+      {
+        "Name": "Grand Finale",
+        "Actions": [
+          { "ActionType": 2 },
+          { "ActionType": 2 },
+          { "ActionType": 2 }
+        ]
+      },
+      {
+        "Name": "Very Very Fast",
+        "Actions": [
+          { "ActionType": 2 },
+          { "ActionType": 3 }
+        ]
+      },
+      {
+        "Name": "Strong as a Bear",
+        "Actions": [
+          { "ActionType": 2 },
+          { "ActionType": 2 },
+          { "ActionType": 4 }
+        ]
+      },
+      {
+        "Name": "Look Out Below!",
+        "Actions": [
+          { "ActionType": 2 },
+          { "ActionType": 2 }
+        ]
+      },
+      {
+        "Name": "Send in the Clowns",
+        "Actions": [
+          { "ActionType": 0 },
+          { "ActionType": 3 }
+        ]
+      },
+      {
+        "Name": "The Hoots Fan Club",
+        "Actions": [
+          { "ActionType": 0 },
+          { "ActionType": 0 },
+          { "ActionType": 4 }
+        ]
+      },
+      {
+        "Name": "Strong as a Bear",
+        "Actions": [
+          { "ActionType": 2 },
+          { "ActionType": 2 },
+          { "ActionType": 4 }
+        ]
+      },
+      {
+        "Name": "Send in the Clowns",
+        "Actions": [
+          { "ActionType": 0 },
+          { "ActionType": 3 }
+        ]
+      },
+      {
+        "Name": "Made You Look",
+        "Actions": [
+          { "ActionType": 1 },
+          { "ActionType": 1 },
+          { "ActionType": 3 }
+        ]
+      },
+      {
+        "Name": "Crushing Hug",
+        "Actions": [
+          { "ActionType": 2 },
+          { "ActionType": 2 },
+          { "ActionType": 4 },
+          { "ActionType": 4 }
+        ]
+      },
+      {
+        "Name": "Wise as an Owl",
+        "Actions": [
+          { "ActionType": 1 },
+          { "ActionType": 1 },
+          { "ActionType": 1 }
+        ]
+      },
+      {
+        "Name": "Intermission",
+        "Actions": [
+          { "ActionType": 1 },
+          { "ActionType": 1 }
+        ]
+      },
+      {
+        "Name": "Talk to My Agent",
+        "Actions": [
+          { "ActionType": 0 },
+          { "ActionType": 0 },
+          { "ActionType": 0 }
+        ]
+      },
+      {
+        "Name": "Crushing Hug",
+        "Actions": [
+          { "ActionType": 2 },
+          { "ActionType": 2 },
+          { "ActionType": 4 },
+          { "ActionType": 4 }
+        ]
+      },
+      {
+        "Name": "Talk to My Agent",
+        "Actions": [
+          { "ActionType": 0 },
+          { "ActionType": 0 },
+          { "ActionType": 0 }
+        ]
+      },
+      {
+        "Name": "Look Out Below!",
+        "Actions": [
+          { "ActionType": 2 },
+          { "ActionType": 2 }
+        ]
+      },
+      {
+        "Name": "Very Very Fast",
+        "Actions": [
+          { "ActionType": 2 },
+          { "ActionType": 3 }
+        ]
+      },
+      {
+        "Name": "Very Very Fast",
+        "Actions": [
+          { "ActionType": 2 },
+          { "ActionType": 3 }
+        ]
+      }
+    ]
+  }
