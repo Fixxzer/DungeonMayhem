@@ -12,24 +12,10 @@ namespace Game.ConsoleApp
         {
             try
             {
-                const int numGames = 10;
+                const int numGames = 10000;
                 const bool useMightyPowers = true;
-                const bool writeToConsole = true;
-                const bool isInteractive = true;
-
-                Dictionary<string, string> referenceList = new Dictionary<string, string>
-                {
-                    {"Azzan", "Azzan.json"},
-                    {"Blorp", "Blorp.json"},
-                    {"Delilah Deathray", "DelilahDeathray.json"},
-                    {"Dr. Tentaculous", "DrTentaculous.json"},
-                    {"Hoots McGoots", "HootsMcGoots.json"},
-                    {"Jaheira", "Jaheira.json"},
-                    {"Lia", "Lia.json"},
-                    {"Lord Cinderpuff", "LordCinderpuff.json"},
-                    {"Mimi LeChaise", "MimiLeChaise.json"},
-                    {"Minsc & Boo", "MinscAndBoo.json"}
-                };
+                const bool writeToConsole = false;
+                const bool isInteractive = false;
 
                 Stopwatch sw1 = new Stopwatch();
                 Stopwatch sw2 = new Stopwatch();
@@ -37,11 +23,23 @@ namespace Game.ConsoleApp
                 sw1.Start();
                 sw2.Start();
 
-                List<List<Creature>> stats = new List<List<Creature>>();
+                var stats = new List<List<Creature>>();
 
                 for (int i = 1; i <= numGames; i++)
                 {
-                    var creatureList = referenceList.Select(kvp => new Creature(kvp.Key, kvp.Value)).ToList();
+                    var creatureList = new List<Creature>
+                    {
+                        new Creature(1, "Azzan", "Azzan.json"),
+                        new Creature(2, "Blorp", "Blorp.json"),
+                        new Creature(3, "Delilah Deathray", "DelilahDeathray.json"),
+                        new Creature(4, "Dr. Tentaculous", "DrTentaculous.json"),
+                        new Creature(5, "Hoots McGoots", "HootsMcGoots.json"),
+                        new Creature(6, "Jaheira", "Jaheira.json"),
+                        new Creature(7, "Lia", "Lia.json"),
+                        new Creature(8, "Lord Cinderpuff", "LordCinderpuff.json"),
+                        new Creature(9, "Mimi LeChaise", "MimiLeChaise.json"),
+                        new Creature(10, "Minsc & Boo", "MinscAndBoo.json")
+                    };
 
                     int? numHumans = null;
                     if (isInteractive)
@@ -61,7 +59,7 @@ namespace Game.ConsoleApp
                             }
                         }
 
-                        List<string> humanNames = new List<string>(numHumans.Value);
+                        var humanNames = new List<string>(numHumans.Value);
                         for (int k = 0; k < numHumans; k++)
                         {
                             Console.WriteLine($"Player {k + 1} please enter your name and press the <enter> key");
@@ -69,29 +67,30 @@ namespace Game.ConsoleApp
                             humanNames.Add(name);
                         }
 
-                        int cpuOptionCount = 1;
-                        foreach (var kvp in referenceList)
+                        foreach (var creature in creatureList)
                         {
-                            Console.WriteLine($"{cpuOptionCount++} - {kvp.Key}");
+                            Console.WriteLine($"{creature.CreatureId} - {creature.CreatureName}");
                         }
 
                         Console.WriteLine();
                         for (int j = 0; j < numHumans; j++)
                         {
-                            int selectedChar = 0;
-                            while (selectedChar == 0)
+                            Creature selectedPlayerCharacter = null;
+                            while (selectedPlayerCharacter == null)
                             {
                                 Console.WriteLine();
                                 Console.WriteLine($"{humanNames[j]}, which character would you like to be?  Press the number for the character you would like to play and press the <enter> key.");
                                 var choice = Console.ReadLine();
-                                selectedChar = int.Parse(choice);
+                                selectedPlayerCharacter = creatureList.FirstOrDefault(x => x.CreatureId == int.Parse(choice ?? string.Empty));
+                                if (selectedPlayerCharacter == null)
+                                {
+                                    Console.WriteLine("Failed to determine character, let's try again.");
+                                }
                             }
 
-                            var selectedPlayerCharacterName = referenceList.ElementAt(selectedChar - 1).Key;
-                            var playerCharacter = creatureList.FirstOrDefault(x => x.CreatureName == selectedPlayerCharacterName);
-                            playerCharacter.PlayerNumber = j + 1;
-                            playerCharacter.PlayerName = humanNames[j];
-                            playerCharacter.IsHuman = true;
+                            selectedPlayerCharacter.PlayerNumber = j + 1;
+                            selectedPlayerCharacter.PlayerName = humanNames[j];
+                            selectedPlayerCharacter.IsHuman = true;
                         }
                     }
 
@@ -106,7 +105,7 @@ namespace Game.ConsoleApp
                     }
                 }
 
-                Dictionary<string, int> results = new Dictionary<string, int>();
+                var results = new Dictionary<string, int>();
                 foreach (var stat in stats)
                 {
                     var winner = stat.First();
@@ -125,9 +124,9 @@ namespace Game.ConsoleApp
                 Console.WriteLine($"Game complete in {sw1.Elapsed}.");
                 Console.WriteLine();
 
-                foreach (var result in results.OrderByDescending(x => x.Value))
+                foreach (var (key, value) in results.OrderByDescending(x => x.Value))
                 {
-                    Console.WriteLine($"{result.Key}: won {result.Value} times! {result.Value / (float)numGames:P}%");
+                    Console.WriteLine($"{key}: won {value} times! {value / (float)numGames:P}%");
                 }
 
                 Console.WriteLine();

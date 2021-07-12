@@ -14,6 +14,8 @@ namespace DungeonMayhem.Library
         private bool _specialAttackAllOverride;
         private bool _specialAttackBonusDamageOverride;
         private Creature _currentTurn;
+        private Creature _specialAttackSpecificOverride;
+        private bool _isFirstTurn;
 
         public GameEngine(List<Creature> creatures, bool useMightyPowers = true, bool useConsoleLogs = true)
         {
@@ -187,7 +189,17 @@ namespace DungeonMayhem.Library
                 _specialAttackBonusDamageOverride = false;
             }
 
-            var card = specificCard ?? creature.PlayCardFromHand();
+            if (_specialAttackSpecificOverride != null && _currentTurn != creature)
+            {
+                _isFirstTurn = false;
+            }
+
+            if (!_isFirstTurn && _specialAttackSpecificOverride != null && _currentTurn == creature)
+            {
+                _specialAttackSpecificOverride = null;
+            }
+
+            var card = specificCard ?? creature.RetrieveCardFromHand();
             creature.InHandDeck.CardDeck.Remove(card);
             creature.InPlayDeck.CardDeck.Add(card);
 
@@ -209,9 +221,8 @@ namespace DungeonMayhem.Library
                         DrawCard(creature);
                         break;
                     case ActionType.Block:
-                        LogLine("*Block 1 damage");
+                        LogLine("*Add 1 shield");
                         PlayShieldCard(creature, card);
-                        LogLine($"\t{creature.CreatureName} now has {creature.NumberOfShields} shield(s)");
                         break;
                     case ActionType.Damage:
                         LogLine("*Deal 1 damage");
@@ -220,7 +231,6 @@ namespace DungeonMayhem.Library
                     case ActionType.Heal:
                         LogLine("*Recover 1 hit point");
                         Heal(creature);
-                        LogLine($"\t{creature.CreatureName} now has {creature.CurrentHitPoints} hit points");
                         break;
                     case ActionType.PlayExtraCard:
                         LogLine("*Play an extra card");
@@ -258,12 +268,22 @@ namespace DungeonMayhem.Library
 
             if (card.Actions.All(x => x.ActionType != ActionType.Block))
             {
-                creature.InPlayDeck.CardDeck.Remove(card);
+                creature.RemoveCardFromInPlayDeck(card);
                 creature.MoveCardToDiscardDeck(card);
+            }
+
+            if (card.Actions.Any(x => x.ActionType == ActionType.Block))
+            {
+                LogLine($"\t{creature.CreatureName} now has {creature.NumberOfShields} shield(s)");
+            }
+
+            if (card.Actions.Any(x => x.ActionType == ActionType.Heal))
+            {
+                LogLine($"\t{creature.CreatureName} now has {creature.CurrentHitPoints} hit point(s)");
             }
         }
 
-        private string DisplayCard(Card specificCard)
+        private static string DisplayCard(Card specificCard)
         {
             StringBuilder sb = new StringBuilder();
             sb.AppendLine(specificCard.Name);
@@ -303,7 +323,7 @@ namespace DungeonMayhem.Library
             return sb.ToString();
         }
 
-        private void PlayShapeshift(Creature creature, Card card)
+        private static void PlayShapeshift(Creature creature, Card card)
         {
             if (card.Name.Contains("Bear"))
             {
@@ -317,32 +337,32 @@ namespace DungeonMayhem.Library
 
         public void Attack(Creature attacker, AttackType attackType, Creature target = null, bool bypassShields = false)
         {
-            List<Creature> attackTargets = new List<Creature>();
+            var attackTargets = new List<Creature>();
             
             if (_specialAttackAllOverride)
             {
                 attackType = AttackType.Opponents;
             }
 
+            if (_specialAttackSpecificOverride != null)
+            {
+                attackType = AttackType.Specific;
+                target = _specialAttackSpecificOverride;
+            }
+
             switch (attackType)
             {
                 case AttackType.Random:
-                    var attackList = new List<Creature>(_creatures.Count - 1);
-                    attackList.AddRange(from c in _creatures
-                                        where c != attacker && c.CurrentHitPoints > 0
-                                        select c);
-
-                    // All opponents have been defeated
+                    var attackList = GetOpponents(attacker).ToList();
                     if (!attackList.Any())
                     {
                         break;
                     }
-
                     attackList.Shuffle();
                     attackTargets.Add(attackList.First());
                     break;
                 case AttackType.All:
-                    attackTargets.AddRange(_creatures.Where(x => x.CurrentHitPoints > 0));
+                    attackTargets.AddRange(GetAliveCreatures());
                     break;
                 case AttackType.Specific:
                     attackTargets.Add(target);
@@ -356,8 +376,7 @@ namespace DungeonMayhem.Library
 
             if (_specialAttackBonusDamageOverride)
             {
-                var tmpList = new List<Creature>(attackTargets);
-                attackTargets.AddRange(tmpList);
+                attackTargets.Double();
             }
 
             foreach (var attackedCreature in attackTargets.OrderBy(x => x.CreatureName))
@@ -403,7 +422,6 @@ namespace DungeonMayhem.Library
         public void Heal(Creature creature)
         {
             creature.Heal();
-            LogLine($"\t{creature.CreatureName} heals.  You now have {creature.CurrentHitPoints} hit points.");
         }
 
         public void DrawCard(Creature creature)
@@ -415,7 +433,6 @@ namespace DungeonMayhem.Library
         public void PlayShieldCard(Creature creature, Card card)
         {
             creature.PlayShieldCard(card);
-            LogLine($"\t{creature.CreatureName} plays shield card {card.Name} with {card.Actions.Count(x => x.ActionType == ActionType.Block)} shields.");
         }
 
         private void MightyPower(Creature creature, Card card)
@@ -473,10 +490,11 @@ namespace DungeonMayhem.Library
                     LogLine("\tTake the shields that an opponent has in play - it protects you now!");
 
                     // find the creature with the most shields
-                    var creatureWithMostShields = _creatures.OrderByDescending(x => x.NumberOfShields).FirstOrDefault();
+                    var ops1 = GetOpponents(creature).Where(x => x.NumberOfShields > 0);
+                    var creatureWithMostShields = ops1.OrderByDescending(x => x.NumberOfShields).FirstOrDefault();
                     if (creatureWithMostShields == null)
                     {
-                        LogLine($"\tThere are not any shields in play");
+                        LogLine("\tThere are not any shields in play");
                     }
                     else
                     {
@@ -489,6 +507,9 @@ namespace DungeonMayhem.Library
                         {
                             creature.NumberOfShields += shields;
                             creatureWithMostShields.NumberOfShields -= shields;
+
+                            creature.ShieldDeck.CardDeck.AddRange(creatureWithMostShields.ShieldDeck.CardDeck);
+                            creatureWithMostShields.ShieldDeck.CardDeck.Clear();
 
                             LogLine($"\t{creature.CreatureName} charms {shields} shield(s) from {creatureWithMostShields.CreatureName}");
                         }
@@ -513,6 +534,8 @@ namespace DungeonMayhem.Library
                         else
                         {
                             creatureWithMostShields.NumberOfShields -= shields;
+                            creatureWithMostShields.ShieldDeck.CardDeck.Clear();
+
                             creature.CurrentHitPoints += shields;
                             if (creature.CurrentHitPoints > creature.MaxHitPoints)
                             {
@@ -542,7 +565,6 @@ namespace DungeonMayhem.Library
                     {
                         for (int i = 0; i < 2; i++)
                         {
-
                             Attack(creature, AttackType.Specific, c);
                         }
                     }
@@ -551,10 +573,21 @@ namespace DungeonMayhem.Library
                     {
                         LogLine($"\tDestroying {c1.NumberOfShields} of {c1.CreatureName}'s shield(s).");
                         c1.NumberOfShields = 0;
+                        c1.ShieldDeck.CardDeck.Clear();
                     }
                     break;
                 case "Charm Ray": //Delilah
-                    LogLine("\tUntil your next turn, choose the target of all attack cards (attacks are random, so doesn't really do much, sorry).");
+                    LogLine("\tUntil your next turn, choose the target of all attack cards.");
+                    var t = GetOpponents(creature).FirstOrDefault();
+                    if (t == null)
+                    {
+                        LogLine("\tNo opponents remaining");
+                        break;
+                    }
+                    LogLine($"\t{t.CreatureName} will be the target of all attack cards until your next turn.");
+                    _specialAttackSpecificOverride = t;
+                    _currentTurn = creature;
+                    _isFirstTurn = true;
                     break;
                 case "Mind Blast": //Dr. T
                     LogLine("\tAttack an opponent once for each card they have in their hand.");
@@ -589,12 +622,14 @@ namespace DungeonMayhem.Library
                     foreach (var opponent in GetOpponents(creature))
                     {
                         var lastOrDefault = opponent.DiscardDeck.CardDeck.LastOrDefault();
+                        
                         if (lastOrDefault == null)
                         {
                             LogLine($"\t{opponent.CreatureName} does not have any cards in their discard pile");
                         }
                         else
                         {
+                            opponent.DiscardDeck.CardDeck.Remove(lastOrDefault);
                             creature.InHandDeck.CardDeck.Add(lastOrDefault);
                             LogLine($"\tAdding {lastOrDefault.Name} from {opponent.CreatureName} to hand.");
                         }
@@ -607,50 +642,23 @@ namespace DungeonMayhem.Library
                     break;
                 case "To The Face!": //Hoots
                     LogLine("\tDestroy a shield card and then attack for each starting shield on that card.");
-                    // Find the character with the most shields on a card
-                    var charsWithShields = _creatures.Where(x => x.CurrentHitPoints > 0 && x.NumberOfShields > 0 && x != creature).ToList();
-                    Creature charToAttack = charsWithShields.FirstOrDefault();
-                    Card highestShieldCard = charToAttack?.ShieldDeck.CardDeck.FirstOrDefault();
-                    int? highestShieldCount = highestShieldCard?.Actions.Count(x => x.ActionType == ActionType.Block);
-
-                    if (highestShieldCount == null)
+                    var (highestShieldCharacter, highestShieldCard) = GetMaxShieldCard(creature);
+                    if (highestShieldCharacter == null)
                     {
-                        LogLine("\tNo Shields in Play!");
+                        LogLine("\tThere are not any shields in play");
                         break;
                     }
-
-                    foreach (var ch in charsWithShields)
+                    var numOfShieldsOnCard = highestShieldCard.Actions.Count(x => x.ActionType == ActionType.Block);
+                    highestShieldCharacter.NumberOfShields -= numOfShieldsOnCard;
+                    if (highestShieldCharacter.NumberOfShields < 0)
                     {
-                        foreach (var shieldCard in ch.ShieldDeck.CardDeck)
-                        {
-                            var numOfShieldsOnCard = shieldCard.Actions.Count(x => x.ActionType == ActionType.Block);
-                            if (numOfShieldsOnCard > highestShieldCount)
-                            {
-                                charToAttack = ch;
-                                highestShieldCard = shieldCard;
-                                highestShieldCount = numOfShieldsOnCard;
-                            }
-                        }
+                        highestShieldCharacter.NumberOfShields = 0;
                     }
-
-                    LogLine($"\t{charToAttack.CreatureName} has the highest shield card with {highestShieldCount} shield(s).");
-
-                    // Reduce number of shields from character
-                    charToAttack.NumberOfShields -= highestShieldCount.Value;
-                    if (charToAttack.NumberOfShields < 0)
+                    LogLine($"\t{highestShieldCharacter.CreatureName} gets {numOfShieldsOnCard} shield(s) destroyed, and gets attacked for each one.");
+                    highestShieldCharacter.DiscardShieldCard(highestShieldCard);
+                    for (int i = 0; i < numOfShieldsOnCard; i++)
                     {
-                        charToAttack.NumberOfShields = 0;
-                    }
-                    LogLine($"\t{charToAttack.CreatureName} gets {highestShieldCount} shield(s) destroyed, and gets attacked for each one.");
-
-                    // Move shield card to discard pile
-                    charToAttack.DiscardDeck.CardDeck.Add(highestShieldCard);
-                    charToAttack.ShieldDeck.CardDeck.Remove(highestShieldCard);
-
-                    // Attack character for number of shields
-                    for (int i = 0; i < highestShieldCount; i++)
-                    {
-                        Attack(creature, AttackType.Specific, charToAttack);
+                        Attack(creature, AttackType.Specific, highestShieldCharacter);
                     }
 
                     break;
@@ -662,11 +670,11 @@ namespace DungeonMayhem.Library
                         c.AddCardFromDrawDeckToInHandDeck();
                         count++;
                     }
-                    LogLine($"\tYou draw {count} card(s).");
                     for (int i = 0; i < count; i++)
                     {
                         DrawCard(creature);
                     }
+                    LogLine($"\tYou draw {count} card(s).");
                     break;
                 case "Primal Strike": //Jaheira
                     LogLine("\tYou make an animal noise and attack each opponent.");
@@ -674,7 +682,8 @@ namespace DungeonMayhem.Library
                     break;
                 case "Commune With Nature": //Jaheira
                     LogLine("\tYou may play a Form card for free.");
-                    var shapeshiftCardInHand = creature.InHandDeck.CardDeck.FirstOrDefault(x => x.Name.Contains("Shapeshift"));
+                    var shapeshiftCardInHand = creature.InHandDeck.CardDeck.FirstOrDefault(cardInHand => cardInHand.Name.StartsWith("Shapeshift"));
+                    
                     if (shapeshiftCardInHand == null)
                     {
                         LogLine("\tNo shapeshift cards in hand");
@@ -729,30 +738,29 @@ namespace DungeonMayhem.Library
                     Attack(creature, AttackType.Opponents);
                     
                     // Attack one twice
-                    var ops = GetOpponents(creature);
-                    var opponentList = ops.ToList();
-                    if (!opponentList.Any())
+                    var ops = GetOpponents(creature).ToList();
+                    if (!ops.Any())
                     {
                         LogLine($"\tNo opponents remaining.");
                         break;
                     }
 
-                    opponentList.Shuffle();
+                    ops.Shuffle();
                     LogLine();
-                    LogLine($"\tAttacking {opponentList.First().CreatureName} twice.");
+                    LogLine($"\tAttacking {ops.First().CreatureName} twice.");
+                    var t2 = ops.First();
                     for (int i = 0; i < 2; i++)
                     {
-                        var target = opponentList.First();
-                        if (target.CurrentHitPoints <= 0)
+                        if (t2.CurrentHitPoints <= 0)
                         {
-                            LogLine($"\t{target.CreatureName} has been defeated and cannot be attacked.");
+                            LogLine($"\t{t2.CreatureName} has been defeated and cannot be attacked.");
                             break;
                         }
-                        Attack(creature, AttackType.Specific, target);
+                        Attack(creature, AttackType.Specific, t2);
                     }
 
                     // Attack a different
-                    var op = opponentList.FirstOrDefault(x => x != opponentList.First()); 
+                    var op = ops.FirstOrDefault(x => x != ops.First());
                     if (op == null)
                     {
                         LogLine("\tNo target available to attack");
@@ -853,16 +861,11 @@ namespace DungeonMayhem.Library
                     break;
                 case "Definitely Just a Mirror": //Mimi
                     LogLine("\tPlay this card as a copy of any other shield card in play");
-                    var shieldCreature = _creatures.FirstOrDefault(x => x.NumberOfShields > 0);
-                    if (shieldCreature == null)
+                    var (_, c3) = GetMaxShieldCard(creature);
+                    if (c3!= null)
                     {
-                        LogLine("\tThere are not any shield cards in play");
-                        break;
+                        PlayCard(creature, c3);
                     }
-
-                    var shieldCard1 = shieldCreature.ShieldDeck.CardDeck.FirstOrDefault();
-                    PlayCard(creature, shieldCard1);
-
                     break;
                 case "Swapportunity": //M&B
                     LogLine("\tEach player gives their hit point total to the player on their right");
@@ -925,9 +928,46 @@ namespace DungeonMayhem.Library
             }
         }
 
+        private (Creature, Card) GetMaxShieldCard(Creature creature)
+        {
+            var charsWithShields = GetOpponents(creature).Where(x => x.NumberOfShields > 0).ToList();
+
+            if (!charsWithShields.Any())
+            {
+                LogLine("\tNo shields in play.");
+                return (null, null);
+            }
+
+            int maxShields = 0;
+            Creature maxCreature = null;
+            Card maxCard = null;
+
+            foreach (var charWithShield in charsWithShields)
+            {
+                foreach (var card in charWithShield.ShieldDeck.CardDeck)
+                {
+                    int numShields = card.Actions.Count(action => action.ActionType == ActionType.Block);
+
+                    if (numShields > maxShields)
+                    {
+                        maxShields = numShields;
+                        maxCreature = charWithShield;
+                        maxCard = card;
+                    }
+                }
+            }
+
+            return (maxCreature, maxCard);
+        }
+
         private IEnumerable<Creature> GetOpponents(Creature creature)
         {
             return _creatures.Where(x => x != creature && x.CurrentHitPoints > 0);
+        }
+
+        private IEnumerable<Creature> GetAliveCreatures()
+        {
+            return _creatures.Where(x => x.CurrentHitPoints > 0);
         }
 
         private void LogLine()
@@ -953,10 +993,5 @@ namespace DungeonMayhem.Library
                 Console.Write(message);
             }
         }
-    }
-
-    public enum AttackType
-    {
-        Random, All, Specific, Opponents
     }
 }

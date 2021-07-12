@@ -8,6 +8,7 @@ namespace DungeonMayhem.Library
 {
     public class Creature
     {
+        public int CreatureId { get; set; }
         public string CreatureName { get; set; }
         public string PlayerName { get; set; }
         public bool IsHuman { get; set; }
@@ -22,13 +23,9 @@ namespace DungeonMayhem.Library
         public ShapeshiftForm ShapeShiftForm { get; set; }
         public int PlayerNumber { get; set; }
 
-        public Creature()
+        public Creature(int creatureId, string name, string jsonFile)
         {
-            
-        }
-
-        public Creature(string name, string jsonFile)
-        {
+            CreatureId = creatureId;
             CreatureName = name;
             CurrentHitPoints = 10;
             DiscardDeck = new Deck();
@@ -70,7 +67,7 @@ namespace DungeonMayhem.Library
             }
         }
 
-        public Card PlayCardFromHand()
+        public Card RetrieveCardFromHand()
         {
             if (InHandDeck.CardDeck.Count <= 0)
             {
@@ -85,7 +82,6 @@ namespace DungeonMayhem.Library
         public void MoveCardToDiscardDeck(Card card)
         {
             DiscardDeck.CardDeck.Add(card);
-            InHandDeck.CardDeck.Remove(card);
         }
 
         public void PlayShieldCard(Card card)
@@ -93,18 +89,29 @@ namespace DungeonMayhem.Library
             if (!ShieldDeck.CardDeck.Contains(card))
             {
                 ShieldDeck.CardDeck.Add(card);
+                card.NumShieldsRemaining = card.Actions.Count(x => x.ActionType == ActionType.Block);
             }
             NumberOfShields++;
         }
 
         public void DiscardShieldCard(Card card)
         {
-            DiscardDeck.CardDeck.Add(card);
             ShieldDeck.CardDeck.Remove(card);
+            DiscardDeck.CardDeck.Add(card);
         }
 
         public void AttackShield()
         {
+            var card = ShieldDeck.CardDeck.FirstOrDefault();
+            if (card != null)
+            {
+                card.NumShieldsRemaining--;
+                if (card.NumShieldsRemaining <= 0)
+                {
+                    DiscardShieldCard(card);
+                }
+            }
+
             NumberOfShields--;
         }
 
@@ -116,41 +123,10 @@ namespace DungeonMayhem.Library
                 CurrentHitPoints = MaxHitPoints;
             }
         }
-    }
 
-    public class Deck
-    {
-        public List<Card> CardDeck { get; set; }
-
-        public Deck()
+        public void RemoveCardFromInPlayDeck(Card card)
         {
-            CardDeck = new List<Card>();
+            InPlayDeck.CardDeck.Remove(card);
         }
-    }
-
-    public class Card
-    {
-        public string Name { get; set; }
-        public List<CreatureAction> Actions { get; set; }
-
-        public Card()
-        {
-            Actions = new List<CreatureAction>();
-        }
-    }
-
-    public class CreatureAction
-    {
-        public ActionType ActionType { get; set; }
-    }
-
-    public enum ActionType
-    {
-        Block, Draw, Damage, PlayExtraCard, Heal, MightyPower, Shapeshift, DamageIgnoreShields
-    }
-
-    public enum ShapeshiftForm
-    {
-        None, Bear, Wolf
     }
 }

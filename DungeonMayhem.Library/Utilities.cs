@@ -19,5 +19,15 @@ namespace DungeonMayhem.Library
                 list[n] = value;
             }
         }
+
+        public static void Double<T>(this IList<T> list)
+        {
+            var tmpList = new List<T>(list);
+
+            foreach (var item in tmpList)
+            {
+                list.Add(item);
+            }
+        }
     }
 }
