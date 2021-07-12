@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text.Json;
 
 namespace DungeonMayhem.Library
 {
@@ -8,25 +10,41 @@ namespace DungeonMayhem.Library
     {
         public string CreatureName { get; set; }
         public string PlayerName { get; set; }
-        public bool IsCpu { get; set; }
+        public bool IsHuman { get; set; }
         public int MaxHitPoints { get; set; }
         public int CurrentHitPoints { get; set; }
         public Deck DiscardDeck { get; set; }
         public Deck InHandDeck { get; set; }
         public Deck DrawDeck { get; set; }
         public Deck ShieldDeck { get; set; }
+        public Deck InPlayDeck { get; set; }
         public int NumberOfShields { get; set; }
         public ShapeshiftForm ShapeShiftForm { get; set; }
+        public int PlayerNumber { get; set; }
 
         public Creature()
         {
+            
+        }
+
+        public Creature(string name, string jsonFile)
+        {
+            CreatureName = name;
+            CurrentHitPoints = 10;
             DiscardDeck = new Deck();
+            DrawDeck = JsonSerializer.Deserialize<Deck>(File.ReadAllText($"Creatures\\{jsonFile}"));
             InHandDeck = new Deck();
-            DrawDeck = new Deck();
+            IsHuman = false;
+            MaxHitPoints = 10;
+            NumberOfShields = 0;
+            PlayerName = string.Empty;
+            PlayerNumber = 0;
+            InPlayDeck = new Deck();
+            ShapeShiftForm = ShapeshiftForm.None;
             ShieldDeck = new Deck();
         }
 
-        public void DrawCard()
+        public void AddCardFromDrawDeckToInHandDeck()
         {
             //Console.WriteLine($"----- Draw count: {DrawDeck.CardDeck.Count}, In-hand count: {InHandDeck.CardDeck.Count}, Discard count: {DiscardDeck.CardDeck.Count}");
 
@@ -43,20 +61,20 @@ namespace DungeonMayhem.Library
                     DrawDeck.CardDeck.AddRange(DiscardDeck.CardDeck);
                     DiscardDeck.CardDeck.Clear();
 
-                    DrawCard();
+                    AddCardFromDrawDeckToInHandDeck();
                 }
                 else
                 {
-                    Console.WriteLine($"**** There are no draw cards or discard cards to draw from. ****");
+                    Console.WriteLine("**** There are no draw cards or discard cards to draw from. ****");
                 }
             }
         }
 
-        public Card DrawCardFromHand()
+        public Card PlayCardFromHand()
         {
             if (InHandDeck.CardDeck.Count <= 0)
             {
-                DrawCard();
+                AddCardFromDrawDeckToInHandDeck();
             }
             InHandDeck.CardDeck.Shuffle();
             var card = InHandDeck.CardDeck.First();
@@ -72,12 +90,10 @@ namespace DungeonMayhem.Library
 
         public void PlayShieldCard(Card card)
         {
-            //@todo: track shield cards - used for some specials
-            ShieldDeck.CardDeck.Add(card);
-            //foreach (var block in card.Actions.Where(x => x.ActionType == ActionType.Block))
-            //{
-            //    NumberOfShields++;
-            //}
+            if (!ShieldDeck.CardDeck.Contains(card))
+            {
+                ShieldDeck.CardDeck.Add(card);
+            }
             NumberOfShields++;
         }
 

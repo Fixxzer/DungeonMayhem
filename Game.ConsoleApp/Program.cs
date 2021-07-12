@@ -1,50 +1,110 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
-using System.Text.Json;
 using DungeonMayhem.Library;
 
 namespace Game.ConsoleApp
 {
-    class Program
+    internal class Program
     {
-        static void Main(string[] args)
+        private static void Main()
         {
             try
             {
-                int numGames = 1;
-                bool useMightyPowers = true;
-                bool writeToConsole = true;
+                const int numGames = 10;
+                const bool useMightyPowers = true;
+                const bool writeToConsole = true;
+                const bool isInteractive = true;
 
-                Stopwatch sw = new Stopwatch();
-                sw.Start();
-             
+                Dictionary<string, string> referenceList = new Dictionary<string, string>
+                {
+                    {"Azzan", "Azzan.json"},
+                    {"Blorp", "Blorp.json"},
+                    {"Delilah Deathray", "DelilahDeathray.json"},
+                    {"Dr. Tentaculous", "DrTentaculous.json"},
+                    {"Hoots McGoots", "HootsMcGoots.json"},
+                    {"Jaheira", "Jaheira.json"},
+                    {"Lia", "Lia.json"},
+                    {"Lord Cinderpuff", "LordCinderpuff.json"},
+                    {"Mimi LeChaise", "MimiLeChaise.json"},
+                    {"Minsc & Boo", "MinscAndBoo.json"}
+                };
+
+                Stopwatch sw1 = new Stopwatch();
+                Stopwatch sw2 = new Stopwatch();
+
+                sw1.Start();
+                sw2.Start();
+
                 List<List<Creature>> stats = new List<List<Creature>>();
-                
+
                 for (int i = 1; i <= numGames; i++)
                 {
-                    List<Creature> creatureList = new List<Creature>
+                    var creatureList = referenceList.Select(kvp => new Creature(kvp.Key, kvp.Value)).ToList();
+
+                    int? numHumans = null;
+                    if (isInteractive)
                     {
-                        CreateCreature("Azzan", "Azzan.json"),
-                        CreateCreature("Blorp", "Blorp.json"),
-                        CreateCreature("Delilah Deathray", "DelilahDeathray.json"),
-                        CreateCreature("Dr. Tentaculous", "DrTentaculous.json"),
-                        CreateCreature("Hoots McGoots", "HootsMcGoots.json"),
-                        CreateCreature("Jaheira", "Jaheira.json"),
-                        CreateCreature("Lia", "Lia.json")
-                    };
+                        while (numHumans == null)
+                        {
+                            Console.WriteLine("Enter the amount of players and press the <enter> key");
+                            string readLine = Console.ReadLine();
+
+                            if (string.IsNullOrWhiteSpace(readLine))
+                            {
+                                Console.WriteLine("Please enter a valid number");
+                            }
+                            else
+                            {
+                                numHumans = int.Parse(readLine);
+                            }
+                        }
+
+                        List<string> humanNames = new List<string>(numHumans.Value);
+                        for (int k = 0; k < numHumans; k++)
+                        {
+                            Console.WriteLine($"Player {k + 1} please enter your name and press the <enter> key");
+                            string name = Console.ReadLine();
+                            humanNames.Add(name);
+                        }
+
+                        int cpuOptionCount = 1;
+                        foreach (var kvp in referenceList)
+                        {
+                            Console.WriteLine($"{cpuOptionCount++} - {kvp.Key}");
+                        }
+
+                        Console.WriteLine();
+                        for (int j = 0; j < numHumans; j++)
+                        {
+                            int selectedChar = 0;
+                            while (selectedChar == 0)
+                            {
+                                Console.WriteLine();
+                                Console.WriteLine($"{humanNames[j]}, which character would you like to be?  Press the number for the character you would like to play and press the <enter> key.");
+                                var choice = Console.ReadLine();
+                                selectedChar = int.Parse(choice);
+                            }
+
+                            var selectedPlayerCharacterName = referenceList.ElementAt(selectedChar - 1).Key;
+                            var playerCharacter = creatureList.FirstOrDefault(x => x.CreatureName == selectedPlayerCharacterName);
+                            playerCharacter.PlayerNumber = j + 1;
+                            playerCharacter.PlayerName = humanNames[j];
+                            playerCharacter.IsHuman = true;
+                        }
+                    }
 
                     GameEngine engine = new GameEngine(creatureList, useMightyPowers, writeToConsole);
-                    stats.Add(engine.GameLoop());
+                    var gameLoop = engine.GameLoop();
+                    stats.Add(gameLoop);
 
                     if (i % 1000 == 0)
                     {
-                        Console.WriteLine($"Playing game {i}");
+                        Console.WriteLine($"Playing game {i} in {sw2.Elapsed}");
+                        sw2.Restart();
                     }
                 }
-
 
                 Dictionary<string, int> results = new Dictionary<string, int>();
                 foreach (var stat in stats)
@@ -60,9 +120,9 @@ namespace Game.ConsoleApp
                     }
                 }
 
-                sw.Stop();
+                sw1.Stop();
 
-                Console.WriteLine($"Game complete in {sw.Elapsed}.");
+                Console.WriteLine($"Game complete in {sw1.Elapsed}.");
                 Console.WriteLine();
 
                 foreach (var result in results.OrderByDescending(x => x.Value))
@@ -78,22 +138,6 @@ namespace Game.ConsoleApp
             {
                 Console.WriteLine(ex.Message);
             }
-        }
-
-        static Creature CreateCreature(string name, string jsonFile)
-        {
-            return new Creature
-            {
-                CreatureName = name,
-                CurrentHitPoints = 10,
-                DiscardDeck = new Deck(),
-                DrawDeck = JsonSerializer.Deserialize<Deck>(File.ReadAllText($"Creatures\\{jsonFile}")),
-                InHandDeck = new Deck(),
-                IsCpu = true,
-                MaxHitPoints = 10,
-                NumberOfShields = 0,
-                PlayerName = string.Empty
-            };
         }
     }
 }

@@ -12,6 +12,7 @@ namespace DungeonMayhem.Library
         private readonly bool _useMightyPowers;
         private readonly bool _useConsoleLogs;
         private bool _specialAttackAllOverride;
+        private bool _specialAttackBonusDamageOverride;
         private Creature _currentTurn;
 
         public GameEngine(List<Creature> creatures, bool useMightyPowers = true, bool useConsoleLogs = true)
@@ -30,7 +31,9 @@ namespace DungeonMayhem.Library
             LogLine("Play order will be:");
             foreach (var creature in _creatures)
             {
-                LogLine($"\t{creature.CreatureName}");
+                string message;
+                message = creature.IsHuman ? $"\t{creature.CreatureName} - played by {creature.PlayerName}" : $"\t{creature.CreatureName}";
+                LogLine(message);
             }
 
             // Shuffle Decks
@@ -60,7 +63,7 @@ namespace DungeonMayhem.Library
                         // Draw a card (up to 3 cards in hand for round 1, only 1 card for every round after)
                         while (creature.InHandDeck.CardDeck.Count < (round == 1 ? 3 : 1))
                         {
-                            creature.DrawCard();
+                            creature.AddCardFromDrawDeckToInHandDeck();
                         }
 
                         // Play a card
@@ -135,12 +138,58 @@ namespace DungeonMayhem.Library
 
         private void PlayCard(Creature creature, Card specificCard = null)
         {
+            // Check in-hand, if 0 - draw 2
+            if (!creature.InHandDeck.CardDeck.Any())
+            {
+                DrawCard(creature);
+                DrawCard(creature);
+            }
+
+            if (creature.IsHuman)
+            {
+                Console.WriteLine();
+                Console.WriteLine("=============================================");
+                Console.WriteLine($"It's now your turn {creature.PlayerName}");
+                if (specificCard != null)
+                {
+                    Console.WriteLine($"You must play {DisplayCard(specificCard)}");
+                    Console.WriteLine("Press any key to continue...");
+                    Console.ReadKey();
+                }
+                else
+                {
+                    int optionNum = 1;
+                    foreach (var handCard in creature.InHandDeck.CardDeck)
+                    {
+                        Console.WriteLine($"{optionNum++} - {DisplayCard(handCard)}");
+                    }
+
+                    int? selectedNum = null;
+                    while (selectedNum == null)
+                    {
+                        Console.WriteLine("Please select a card to play, type the number and press the <enter> key to choose");
+                        string option = Console.ReadLine();
+                        selectedNum = int.Parse(option);
+                    }
+
+                    var selectedCard = creature.InHandDeck.CardDeck[selectedNum.Value - 1];
+                    specificCard = selectedCard;
+                }
+            }
+
             if (_specialAttackAllOverride && _currentTurn != creature)
             {
                 _specialAttackAllOverride = false;
             }
 
-            var card = specificCard ?? creature.DrawCardFromHand();
+            if (_specialAttackBonusDamageOverride && _currentTurn != creature)
+            {
+                _specialAttackBonusDamageOverride = false;
+            }
+
+            var card = specificCard ?? creature.PlayCardFromHand();
+            creature.InHandDeck.CardDeck.Remove(card);
+            creature.InPlayDeck.CardDeck.Add(card);
 
             LogLine();
             LogLine($"{creature.CreatureName} plays '{card.Name}'");
@@ -157,11 +206,11 @@ namespace DungeonMayhem.Library
                 {
                     case ActionType.Draw:
                         LogLine("*Draw a card");
-                        creature.DrawCard();
+                        DrawCard(creature);
                         break;
                     case ActionType.Block:
                         LogLine("*Block 1 damage");
-                        creature.PlayShieldCard(card);
+                        PlayShieldCard(creature, card);
                         LogLine($"\t{creature.CreatureName} now has {creature.NumberOfShields} shield(s)");
                         break;
                     case ActionType.Damage:
@@ -170,7 +219,7 @@ namespace DungeonMayhem.Library
                         break;
                     case ActionType.Heal:
                         LogLine("*Recover 1 hit point");
-                        creature.Heal();
+                        Heal(creature);
                         LogLine($"\t{creature.CreatureName} now has {creature.CurrentHitPoints} hit points");
                         break;
                     case ActionType.PlayExtraCard:
@@ -179,7 +228,7 @@ namespace DungeonMayhem.Library
                         break;
                     case ActionType.MightyPower:
                         LogLine("*Mighty Power!");
-                        MightyPower(card, creature);
+                        MightyPower(creature, card);
                         break;
                     case ActionType.DamageIgnoreShields:
                         Attack(creature, AttackType.Random, null, true);
@@ -189,7 +238,7 @@ namespace DungeonMayhem.Library
                         {
                             case ShapeshiftForm.Bear:
                                 LogLine("*Bear Form: Heal");
-                                creature.Heal();
+                                Heal(creature);
                                 break;
                             case ShapeshiftForm.Wolf:
                                 LogLine("*Wolf Form: Attack");
@@ -207,7 +256,51 @@ namespace DungeonMayhem.Library
                 }
             }
 
-            creature.MoveCardToDiscardDeck(card);
+            if (card.Actions.All(x => x.ActionType != ActionType.Block))
+            {
+                creature.InPlayDeck.CardDeck.Remove(card);
+                creature.MoveCardToDiscardDeck(card);
+            }
+        }
+
+        private string DisplayCard(Card specificCard)
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine(specificCard.Name);
+            foreach (var action in specificCard.Actions)
+            {
+                switch (action.ActionType)
+                {
+                    case ActionType.Block:
+                        sb.AppendLine("Block");
+                        break;
+                    case ActionType.Draw:
+                        sb.AppendLine("Draw");
+                        break;
+                    case ActionType.Damage:
+                        sb.AppendLine("Attack");
+                        break;
+                    case ActionType.PlayExtraCard:
+                        sb.AppendLine("Lightning");
+                        break;
+                    case ActionType.Heal:
+                        sb.AppendLine("Heal");
+                        break;
+                    case ActionType.MightyPower:
+                        sb.AppendLine("Mighty Power");
+                        break;
+                    case ActionType.Shapeshift:
+                        sb.AppendLine("Shapeshift");
+                        break;
+                    case ActionType.DamageIgnoreShields:
+                        sb.AppendLine("Attack, ignoring shields");
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
+            }
+
+            return sb.ToString();
         }
 
         private void PlayShapeshift(Creature creature, Card card)
@@ -225,6 +318,7 @@ namespace DungeonMayhem.Library
         public void Attack(Creature attacker, AttackType attackType, Creature target = null, bool bypassShields = false)
         {
             List<Creature> attackTargets = new List<Creature>();
+            
             if (_specialAttackAllOverride)
             {
                 attackType = AttackType.Opponents;
@@ -260,9 +354,20 @@ namespace DungeonMayhem.Library
                     throw new ArgumentOutOfRangeException(nameof(attackType), attackType, null);
             }
 
-            foreach (var attackedCreature in attackTargets)
+            if (_specialAttackBonusDamageOverride)
+            {
+                var tmpList = new List<Creature>(attackTargets);
+                attackTargets.AddRange(tmpList);
+            }
+
+            foreach (var attackedCreature in attackTargets.OrderBy(x => x.CreatureName))
             {
                 LogMessage($"\t{attacker.CreatureName} attacks {attackedCreature.CreatureName}");
+                if (attackedCreature.CurrentHitPoints <= 0)
+                {
+                    LogLine($" - {attackedCreature.CreatureName} has been defeated, and can no longer be attacked.");
+                    break;
+                }
 
                 if (bypassShields)
                 {
@@ -295,7 +400,25 @@ namespace DungeonMayhem.Library
             }
         }
 
-        private void MightyPower(Card card, Creature creature)
+        public void Heal(Creature creature)
+        {
+            creature.Heal();
+            LogLine($"\t{creature.CreatureName} heals.  You now have {creature.CurrentHitPoints} hit points.");
+        }
+
+        public void DrawCard(Creature creature)
+        {
+            creature.AddCardFromDrawDeckToInHandDeck();
+            LogLine($"\t{creature.CreatureName} draws a card.");
+        }
+
+        public void PlayShieldCard(Creature creature, Card card)
+        {
+            creature.PlayShieldCard(card);
+            LogLine($"\t{creature.CreatureName} plays shield card {card.Name} with {card.Actions.Count(x => x.ActionType == ActionType.Block)} shields.");
+        }
+
+        private void MightyPower(Creature creature, Card card)
         {
             if (!_useMightyPowers)
             {
@@ -308,7 +431,7 @@ namespace DungeonMayhem.Library
                     LogLine("\tSwap your hit points with an opponent's");
                     int maxHp = creature.CurrentHitPoints;
                     Creature maxHpCreature = creature;
-                    foreach (var targetCreature in _creatures)
+                    foreach (var targetCreature in _creatures.Where(x => x != creature))
                     {
                         if (targetCreature.CurrentHitPoints > maxHp)
                         {
@@ -419,6 +542,7 @@ namespace DungeonMayhem.Library
                     {
                         for (int i = 0; i < 2; i++)
                         {
+
                             Attack(creature, AttackType.Specific, c);
                         }
                     }
@@ -535,13 +659,13 @@ namespace DungeonMayhem.Library
                     int count = 0;
                     foreach (var c in GetOpponents(creature))
                     {
-                        c.DrawCard();
+                        c.AddCardFromDrawDeckToInHandDeck();
                         count++;
                     }
                     LogLine($"\tYou draw {count} card(s).");
                     for (int i = 0; i < count; i++)
                     {
-                        creature.DrawCard();
+                        DrawCard(creature);
                     }
                     break;
                 case "Primal Strike": //Jaheira
@@ -583,6 +707,217 @@ namespace DungeonMayhem.Library
                         creature1.ShieldDeck.CardDeck.Clear();
                         creature1.NumberOfShields = 0;
                     }
+                    break;
+                case "Liquidate Assets": //Lord C
+                    LogLine("\tDiscard your hand and attack equal to the number of cards discarded.");
+                    
+                    int numAttacks = creature.InHandDeck.CardDeck.Count;
+                    LogLine($"\tYou have {numAttacks} card(s) in your hand, and get to attack {numAttacks} time(s).");
+                    creature.DiscardDeck.CardDeck.AddRange(creature.InHandDeck.CardDeck);
+                    creature.InHandDeck.CardDeck.Clear();
+                    for (int i = 0; i < numAttacks; i++)
+                    {
+                        Attack(creature, AttackType.Random);
+                    }
+                    break;
+                case "Hostile Takeover": //Lord C
+                    LogLine("\tAttack all opponents, double attack one opponent, then attack a different opponent.");
+                    
+                    // Attack all
+                    LogLine();
+                    LogLine("\tAttacking all opponents");
+                    Attack(creature, AttackType.Opponents);
+                    
+                    // Attack one twice
+                    var ops = GetOpponents(creature);
+                    var opponentList = ops.ToList();
+                    if (!opponentList.Any())
+                    {
+                        LogLine($"\tNo opponents remaining.");
+                        break;
+                    }
+
+                    opponentList.Shuffle();
+                    LogLine();
+                    LogLine($"\tAttacking {opponentList.First().CreatureName} twice.");
+                    for (int i = 0; i < 2; i++)
+                    {
+                        var target = opponentList.First();
+                        if (target.CurrentHitPoints <= 0)
+                        {
+                            LogLine($"\t{target.CreatureName} has been defeated and cannot be attacked.");
+                            break;
+                        }
+                        Attack(creature, AttackType.Specific, target);
+                    }
+
+                    // Attack a different
+                    var op = opponentList.FirstOrDefault(x => x != opponentList.First()); 
+                    if (op == null)
+                    {
+                        LogLine("\tNo target available to attack");
+                        break;
+                    }
+                    
+                    LogLine();
+                    LogLine($"\tAttacking someone different, attacking {op.CreatureName}");
+                    
+                    Attack(creature, AttackType.Specific, op);
+
+                    break;
+                case "Murders and Acquisitions": //Lord C
+                    LogLine("\tEach player must attack, heal, or draw.  Start with you and go right.  You repeat all choices.");
+
+                    // Start with me
+                    int r = new Random().Next(0, 3);
+                    switch (r)
+                    {
+                        case 0: //attack
+                            Attack(creature, AttackType.Random);
+                            break;
+                        case 1: //heal
+                            Heal(creature);
+                            break;
+                        case 2: //draw
+                            DrawCard(creature);
+                            break;
+                    }
+
+                    // Go through rest of opponents and repeat their choice
+                    foreach (var opponent in GetOpponents(creature))
+                    {
+                        r = new Random().Next(0, 3);
+                        switch (r)
+                        {
+                            case 0: //attack
+                                Attack(opponent, AttackType.Random);
+                                Attack(creature, AttackType.Random);
+                                break;
+                            case 1: //heal
+                                Heal(opponent);
+                                Heal(creature);
+                                break;
+                            case 2: //draw
+                                DrawCard(opponent);
+                                DrawCard(creature);
+                                break;
+                        }
+                    }
+                    break;
+                case "A Book (Cannot Bite)": //Mimi
+                    LogLine("\tUse the top-listed Mighty Power of the player to your left or right");
+                    var indexOf = _creatures.IndexOf(creature);
+                    if (indexOf == 0)
+                    {
+                        indexOf = _creatures.Count;
+                    }
+
+                    var previousCreature = _creatures[indexOf - 1];
+
+                    Card mightyPowerCard = previousCreature.DrawDeck.CardDeck.FirstOrDefault(card1 => card1.Actions.Any(action => action.ActionType == ActionType.MightyPower));
+                    if (mightyPowerCard != null)
+                    {
+                        previousCreature.DrawDeck.CardDeck.Remove(mightyPowerCard);
+                        PlayCard(creature, mightyPowerCard);
+                        break;
+                    }
+
+                    mightyPowerCard = previousCreature.DiscardDeck.CardDeck.FirstOrDefault(card1 => card1.Actions.Any(action => action.ActionType == ActionType.MightyPower));
+                    if (mightyPowerCard != null)
+                    {
+                        previousCreature.DiscardDeck.CardDeck.Remove(mightyPowerCard);
+                        PlayCard(creature, mightyPowerCard);
+                        break;
+                    }
+
+                    mightyPowerCard = previousCreature.InHandDeck.CardDeck.FirstOrDefault(card1 => card1.Actions.Any(action => action.ActionType == ActionType.MightyPower));
+                    if (mightyPowerCard != null)
+                    {
+                        previousCreature.InHandDeck.CardDeck.Remove(mightyPowerCard);
+                        PlayCard(creature, mightyPowerCard);
+                        break;
+                    }
+
+                    break;
+                case "It's Not a Trap": //Mimi
+                    LogLine("\tMake one player's hit points equal to another player's hit points");
+                    var aliveCreatures = _creatures.Where(x => x.CurrentHitPoints > 0 && x != creature).OrderBy(x => x.CurrentHitPoints).ToList();
+                    var lowest = aliveCreatures.FirstOrDefault();
+                    var highest = aliveCreatures.LastOrDefault();
+
+                    if (lowest != null && highest != null)
+                    {
+                        LogLine($"\tMaking {highest.CreatureName}'s hit points ({highest.CurrentHitPoints}) equal to {lowest.CreatureName}'s hit points ({lowest.CurrentHitPoints}).");
+                        highest.CurrentHitPoints = lowest.CurrentHitPoints;
+                    }
+                    break;
+                case "Definitely Just a Mirror": //Mimi
+                    LogLine("\tPlay this card as a copy of any other shield card in play");
+                    var shieldCreature = _creatures.FirstOrDefault(x => x.NumberOfShields > 0);
+                    if (shieldCreature == null)
+                    {
+                        LogLine("\tThere are not any shield cards in play");
+                        break;
+                    }
+
+                    var shieldCard1 = shieldCreature.ShieldDeck.CardDeck.FirstOrDefault();
+                    PlayCard(creature, shieldCard1);
+
+                    break;
+                case "Swapportunity": //M&B
+                    LogLine("\tEach player gives their hit point total to the player on their right");
+                    int tmpHitPoints = 0;
+                    var players = _creatures.Where(x => x.CurrentHitPoints > 0).ToList();
+                    for (int i = 0; i < players.Count; i++)
+                    {
+                        if (i == 0)
+                        {
+                            tmpHitPoints = players[i].CurrentHitPoints;
+                        }
+
+                        if (i < players.Count - 1)
+                        {
+                            players[i].CurrentHitPoints = players[i + 1].CurrentHitPoints;
+                        }
+                        else
+                        {
+                            players[i].CurrentHitPoints = tmpHitPoints;
+                        }
+                    }
+                    break;
+                case "Scouting Outing": //M&B
+                    LogLine("\tDraw a card from the top of each opponent's deck");
+                    foreach (var creature1 in _creatures.Where(x => x.CurrentHitPoints > 0))
+                    {
+                        var card2 = creature1.DrawDeck.CardDeck.FirstOrDefault();
+                        if (card2 == null)
+                        {
+                            if (creature1.DiscardDeck.CardDeck.Any())
+                            {
+                                creature1.DiscardDeck.CardDeck.Shuffle();
+                                card2 = creature1.DiscardDeck.CardDeck.FirstOrDefault();
+                            }
+                            else
+                            {
+                                creature1.InHandDeck.CardDeck.Shuffle();
+                                card2 = creature1.InHandDeck.CardDeck.FirstOrDefault();
+                            }
+                        }
+
+                        if (card2 == null)
+                        {
+                            LogLine($"\t{creature1.CreatureName} does not have any cards to draw from");
+                        }
+                        else
+                        {
+                            creature.InHandDeck.CardDeck.Add(card2);
+                        }
+                    }
+                    break;
+                case "Favored Frienemies": //M&B
+                    LogLine("\tYour attack cards deal one bonus damage this turn");
+                    _specialAttackBonusDamageOverride = true;
+                    _currentTurn = creature;
                     break;
                 default:
                     LogLine("\tMighty Power Not Found!");
