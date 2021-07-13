@@ -200,9 +200,8 @@
         ]
       },
       {
-        "Name": "Template",
+        "Name": "Brutal Punch",
         "Actions": [
-          { "ActionType": 2 },
           { "ActionType": 2 },
           { "ActionType": 2 }
         ]

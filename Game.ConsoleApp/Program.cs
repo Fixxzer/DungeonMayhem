@@ -12,10 +12,10 @@ namespace Game.ConsoleApp
         {
             try
             {
-                const int numGames = 100;
+                const int numGames = 1;
                 const bool useMightyPowers = true;
                 const bool writeToConsole = true;
-                const bool isInteractive = false;
+                const bool isInteractive = true;
 
                 Stopwatch sw1 = new Stopwatch();
                 Stopwatch sw2 = new Stopwatch();
@@ -27,20 +27,21 @@ namespace Game.ConsoleApp
 
                 for (int i = 1; i <= numGames; i++)
                 {
+                    var id = 1;
                     var creatureList = new List<Creature>
                     {
-                        new Creature(1, "Azzan", "Azzan.json"),
-                        new Creature(2, "Blorp", "Blorp.json"),
-                        new Creature(3, "Delilah Deathray", "DelilahDeathray.json"),
-                        new Creature(4, "Dr. Tentaculous", "DrTentaculous.json"),
-                        new Creature(5, "Hoots McGoots", "HootsMcGoots.json"),
-                        new Creature(6, "Jaheira", "Jaheira.json"),
-                        new Creature(7, "Lia", "Lia.json"),
-                        new Creature(8, "Lord Cinderpuff", "LordCinderpuff.json"),
-                        new Creature(9, "Mimi LeChaise", "MimiLeChaise.json"),
-                        new Creature(10, "Minsc & Boo", "MinscAndBoo.json"),
-                        new Creature(10, "Oriax", "Oriax.json"),
-                        new Creature(10, "Sutha", "Sutha.json")
+                        new Creature(id++, "Azzan", "Azzan.json"),
+                        new Creature(id++, "Blorp", "Blorp.json"),
+                        new Creature(id++, "Delilah Deathray", "DelilahDeathray.json"),
+                        new Creature(id++, "Dr. Tentaculous", "DrTentaculous.json"),
+                        new Creature(id++, "Hoots McGoots", "HootsMcGoots.json"),
+                        new Creature(id++, "Jaheira", "Jaheira.json"),
+                        new Creature(id++, "Lia", "Lia.json"),
+                        new Creature(id++, "Lord Cinderpuff", "LordCinderpuff.json"),
+                        new Creature(id++, "Mimi LeChaise", "MimiLeChaise.json"),
+                        new Creature(id++, "Minsc & Boo", "MinscAndBoo.json"),
+                        new Creature(id++, "Oriax", "Oriax.json"),
+                        new Creature(id++, "Sutha", "Sutha.json")
                     };
 
                     int? numHumans = null;
@@ -97,7 +98,7 @@ namespace Game.ConsoleApp
                     }
 
                     GameEngine engine = new GameEngine(creatureList, useMightyPowers, writeToConsole);
-                    var gameLoop = engine.GameLoop();
+                    var gameLoop = engine.GameLoop(isInteractive);
                     stats.Add(gameLoop);
 
                     if (i % 1000 == 0)
