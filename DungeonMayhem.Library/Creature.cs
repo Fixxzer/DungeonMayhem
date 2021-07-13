@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
+﻿using System.IO;
 using System.Linq;
 using System.Text.Json;
 
@@ -41,42 +39,30 @@ namespace DungeonMayhem.Library
             ShieldDeck = new Deck();
         }
 
-        public void AddCardFromDrawDeckToInHandDeck()
+        public Card AddCardFromDrawDeckToInHandDeck()
         {
-            //Console.WriteLine($"----- Draw count: {DrawDeck.CardDeck.Count}, In-hand count: {InHandDeck.CardDeck.Count}, Discard count: {DiscardDeck.CardDeck.Count}");
+            while (true)
+            {
+                //Console.WriteLine($"----- Draw count: {DrawDeck.CardDeck.Count}, In-hand count: {InHandDeck.CardDeck.Count}, Discard count: {DiscardDeck.CardDeck.Count}");
+                if (DrawDeck.CardDeck.Any())
+                {
+                    var cardToAdd = DrawDeck.CardDeck.First();
+                    InHandDeck.CardDeck.Add(cardToAdd);
+                    DrawDeck.CardDeck.Remove(cardToAdd);
+                    return cardToAdd;
+                }
 
-            if (DrawDeck.CardDeck.Any())
-            {
-                InHandDeck.CardDeck.Add(DrawDeck.CardDeck[0]);
-                DrawDeck.CardDeck.RemoveAt(0);
-            }
-            else
-            {
                 if (DiscardDeck.CardDeck.Any())
                 {
                     DiscardDeck.CardDeck.Shuffle();
                     DrawDeck.CardDeck.AddRange(DiscardDeck.CardDeck);
                     DiscardDeck.CardDeck.Clear();
-
-                    AddCardFromDrawDeckToInHandDeck();
                 }
                 else
                 {
-                    Console.WriteLine("**** There are no draw cards or discard cards to draw from. ****");
+                    return null;
                 }
             }
-        }
-
-        public Card RetrieveCardFromHand()
-        {
-            if (InHandDeck.CardDeck.Count <= 0)
-            {
-                AddCardFromDrawDeckToInHandDeck();
-            }
-            InHandDeck.CardDeck.Shuffle();
-            var card = InHandDeck.CardDeck.First();
-            InHandDeck.CardDeck.Remove(card);
-            return card;
         }
 
         public void MoveCardToDiscardDeck(Card card)
@@ -88,6 +74,7 @@ namespace DungeonMayhem.Library
         {
             if (!ShieldDeck.CardDeck.Contains(card))
             {
+                RemoveCardFromInPlayDeck(card);
                 ShieldDeck.CardDeck.Add(card);
                 card.NumShieldsRemaining = card.Actions.Count(x => x.ActionType == ActionType.Block);
             }

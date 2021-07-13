@@ -161,8 +161,6 @@
       "Name": "Praise Me",
       "Actions": [
         { "ActionType": 5 },
-        { "ActionType": 2 },
-        { "ActionType": 2 },
         { "ActionType": 1 },
         { "ActionType": 1 },
         { "ActionType": 1 }
@@ -172,8 +170,6 @@
       "Name": "Praise Me",
       "Actions": [
         { "ActionType": 5 },
-        { "ActionType": 2 },
-        { "ActionType": 2 },
         { "ActionType": 1 },
         { "ActionType": 1 },
         { "ActionType": 1 }

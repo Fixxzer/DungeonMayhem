@@ -33,8 +33,7 @@ namespace DungeonMayhem.Library
             LogLine("Play order will be:");
             foreach (var creature in _creatures)
             {
-                string message;
-                message = creature.IsHuman ? $"\t{creature.CreatureName} - played by {creature.PlayerName}" : $"\t{creature.CreatureName}";
+                var message = creature.IsHuman ? $"\t{creature.CreatureName} - played by {creature.PlayerName}" : $"\t{creature.CreatureName}";
                 LogLine(message);
             }
 
@@ -62,12 +61,17 @@ namespace DungeonMayhem.Library
                     // Determine if isAlive
                     if (creature.CurrentHitPoints > 0)
                     {
-                        // Draw a card (up to 3 cards in hand for round 1, only 1 card for every round after)
-                        while (creature.InHandDeck.CardDeck.Count < (round == 1 ? 3 : 1))
+                        LogLine();
+                        var optionalPlayerName = !string.IsNullOrWhiteSpace(creature.PlayerName) ? $" ({creature.PlayerName})" : string.Empty;
+                        LogLine($"--- {creature.CreatureName}{optionalPlayerName}'s turn.");
+                        LogLine();
+                     
+                        // Draw a card, 3 cards for round 1, only 1 card for every round after
+                        for (int i = 0; i < (round == 1 ? 3 : 1); i++)
                         {
-                            creature.AddCardFromDrawDeckToInHandDeck();
+                            DrawCard(creature);
                         }
-
+                        
                         // Play a card
                         PlayCard(creature);
                     }
@@ -140,13 +144,6 @@ namespace DungeonMayhem.Library
 
         private void PlayCard(Creature creature, Card specificCard = null)
         {
-            // Check in-hand, if 0 - draw 2
-            if (!creature.InHandDeck.CardDeck.Any())
-            {
-                DrawCard(creature);
-                DrawCard(creature);
-            }
-
             if (creature.IsHuman)
             {
                 Console.WriteLine();
@@ -199,7 +196,7 @@ namespace DungeonMayhem.Library
                 _specialAttackSpecificOverride = null;
             }
 
-            var card = specificCard ?? creature.RetrieveCardFromHand();
+            var card = specificCard ?? RetrieveCardFromHand(creature);
             creature.InHandDeck.CardDeck.Remove(card);
             creature.InPlayDeck.CardDeck.Add(card);
 
@@ -274,13 +271,106 @@ namespace DungeonMayhem.Library
 
             if (card.Actions.Any(x => x.ActionType == ActionType.Block))
             {
+                LogLine();
                 LogLine($"\t{creature.CreatureName} now has {creature.NumberOfShields} shield(s)");
             }
 
             if (card.Actions.Any(x => x.ActionType == ActionType.Heal))
             {
+                LogLine();
                 LogLine($"\t{creature.CreatureName} now has {creature.CurrentHitPoints} hit point(s)");
             }
+
+            // Check in-hand, if 0 - draw 2
+            if (!creature.InHandDeck.CardDeck.Any())
+            {
+                DrawCard(creature);
+                DrawCard(creature);
+            }
+        }
+
+        private Card RetrieveCardFromHand(Creature creature)
+        {
+            // If out of cards, draw twice
+            if (creature.InHandDeck.CardDeck.Count <= 0)
+            {
+                DrawCard(creature);
+                DrawCard(creature);
+            }
+
+            // Prioritize play again cards
+            var playAgainCard = GetCardWithMostActionItems(creature, ActionType.PlayExtraCard);
+            if (playAgainCard != null)
+            {
+                creature.InHandDeck.CardDeck.Remove(playAgainCard);
+                return playAgainCard;
+            }
+
+            // If health is low, prioritize healing or shields
+            if (creature.CurrentHitPoints <= 5)
+            {
+                int shieldCount = 0;
+                int healingCount = 0;
+
+                var shieldCard = GetCardWithMostActionItems(creature, ActionType.Block);
+                if (shieldCard != null)
+                {
+                    shieldCount = shieldCard.Actions.Count(x => x.ActionType == ActionType.Block);
+                }
+
+                var healthCard = GetCardWithMostActionItems(creature, ActionType.Heal);
+                if (healthCard != null)
+                {
+                    healingCount = healthCard.Actions.Count(x => x.ActionType == ActionType.Heal);
+                }
+
+                if (healingCount != 0 || shieldCount != 0)
+                {
+                    if (healingCount >= shieldCount)
+                    {
+                        creature.InHandDeck.CardDeck.Remove(healthCard);
+                        return healthCard;
+                    }
+
+                    creature.InHandDeck.CardDeck.Remove(shieldCard);
+                    return shieldCard;
+                }
+            }
+
+            // Otherwise randomize
+            creature.InHandDeck.CardDeck.Shuffle();
+
+            var card = creature.InHandDeck.CardDeck.First();
+            return card;
+        }
+
+        private static Card GetCardWithMostActionItems(Creature creature, ActionType actionType)
+        {
+            List<Card> cards = new List<Card>();
+            foreach (var card in creature.InHandDeck.CardDeck)
+            {
+                foreach (var action in card.Actions)
+                {
+                    if (action.ActionType == actionType)
+                    {
+                        cards.Add(card);
+                    }
+                }
+            }
+
+            int max = 0;
+            Card maxCard = null;
+            foreach (var card in cards)
+            {
+                var count = card.Actions.Count(x => x.ActionType == actionType);
+                if (count > max)
+                {
+                    max = count;
+                    maxCard = card;
+                }
+            }
+
+            return maxCard;
         }
 
         private static string DisplayCard(Card specificCard)
@@ -358,8 +448,8 @@ namespace DungeonMayhem.Library
                     {
                         break;
                     }
-                    attackList.Shuffle();
-                    attackTargets.Add(attackList.First());
+                    //attackList.Shuffle();
+                    attackTargets.Add(attackList.OrderByDescending(x => x.CurrentHitPoints).First());
                     break;
                 case AttackType.All:
                     attackTargets.AddRange(GetAliveCreatures());
@@ -426,8 +516,14 @@ namespace DungeonMayhem.Library
 
         public void DrawCard(Creature creature)
         {
-            creature.AddCardFromDrawDeckToInHandDeck();
-            LogLine($"\t{creature.CreatureName} draws a card.");
+            var card = creature.AddCardFromDrawDeckToInHandDeck();
+            if (card == null)
+            {
+                LogLine("**** There are no draw cards or discard cards to draw from. ****");
+                return;
+            }
+
+            LogLine($"\t{creature.CreatureName} draws {card.Name}.");
         }
 
         public void PlayShieldCard(Creature creature, Card card)
@@ -554,7 +650,7 @@ namespace DungeonMayhem.Library
                     LogLine("\tThis turn, your attack cards ignore shield cards.  Gain 3 attacks.");
                     break;
                 case "Praise Me": //Delilah
-                    LogLine("\tDraw 3 cards, then double attack.");
+                    LogLine("\tDraw 3 cards, then, each opponent can choose to praise your greatness.");
                     break;
                 case "Death Ray": //Delilah
                     LogLine("\tDouble attack each opponent with no shield cards in play.  Then destroy all shield cards - including yours!");
@@ -642,7 +738,7 @@ namespace DungeonMayhem.Library
                     break;
                 case "To The Face!": //Hoots
                     LogLine("\tDestroy a shield card and then attack for each starting shield on that card.");
-                    var (highestShieldCharacter, highestShieldCard) = GetMaxShieldCard(creature);
+                    var (highestShieldCharacter, highestShieldCard) = GetMaxShieldCardFromOpponents(creature);
                     if (highestShieldCharacter == null)
                     {
                         LogLine("\tThere are not any shields in play");
@@ -667,7 +763,7 @@ namespace DungeonMayhem.Library
                     int count = 0;
                     foreach (var c in GetOpponents(creature))
                     {
-                        c.AddCardFromDrawDeckToInHandDeck();
+                        DrawCard(c);
                         count++;
                     }
                     for (int i = 0; i < count; i++)
@@ -861,7 +957,7 @@ namespace DungeonMayhem.Library
                     break;
                 case "Definitely Just a Mirror": //Mimi
                     LogLine("\tPlay this card as a copy of any other shield card in play");
-                    var (_, c3) = GetMaxShieldCard(creature);
+                    var (_, c3) = GetMaxShieldCardFromOpponents(creature);
                     if (c3!= null)
                     {
                         PlayCard(creature, c3);
@@ -928,7 +1024,7 @@ namespace DungeonMayhem.Library
             }
         }
 
-        private (Creature, Card) GetMaxShieldCard(Creature creature)
+        private (Creature, Card) GetMaxShieldCardFromOpponents(Creature creature)
         {
             var charsWithShields = GetOpponents(creature).Where(x => x.NumberOfShields > 0).ToList();
 

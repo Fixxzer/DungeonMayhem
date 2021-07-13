@@ -12,9 +12,9 @@ namespace Game.ConsoleApp
         {
             try
             {
-                const int numGames = 10000;
+                const int numGames = 100;
                 const bool useMightyPowers = true;
-                const bool writeToConsole = false;
+                const bool writeToConsole = true;
                 const bool isInteractive = false;
 
                 Stopwatch sw1 = new Stopwatch();
@@ -38,7 +38,9 @@ namespace Game.ConsoleApp
                         new Creature(7, "Lia", "Lia.json"),
                         new Creature(8, "Lord Cinderpuff", "LordCinderpuff.json"),
                         new Creature(9, "Mimi LeChaise", "MimiLeChaise.json"),
-                        new Creature(10, "Minsc & Boo", "MinscAndBoo.json")
+                        new Creature(10, "Minsc & Boo", "MinscAndBoo.json"),
+                        new Creature(10, "Oriax", "Oriax.json"),
+                        new Creature(10, "Sutha", "Sutha.json")
                     };
 
                     int? numHumans = null;
