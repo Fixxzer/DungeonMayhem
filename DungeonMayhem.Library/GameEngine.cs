@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 
 namespace DungeonMayhem.Library
 {
@@ -51,7 +52,9 @@ namespace DungeonMayhem.Library
             while (true)
             {
                 StringBuilder sb = new StringBuilder();
+                sb.AppendLine("--------------------------");
                 sb.AppendLine($"------ Round {round}:-----");
+                sb.AppendLine("--------------------------");
                 foreach (var creature in _creatures.OrderByDescending(x => x.CurrentHitPoints).ThenByDescending(x => x.NumberOfShields))
                 {
                     sb.AppendLine($"\t{creature.CreatureName} with {creature.CurrentHitPoints} hit points and {creature.NumberOfShields} shield(s)");

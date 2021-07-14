@@ -49,7 +49,7 @@ namespace Game.ConsoleApp
                     {
                         while (numHumans == null)
                         {
-                            Console.WriteLine("Enter the amount of players and press the <enter> key");
+                            Console.WriteLine($"Enter the amount of human players between 0 and {creatureList.Count} and press the <enter> key");
                             string readLine = Console.ReadLine();
 
                             if (string.IsNullOrWhiteSpace(readLine))
@@ -59,6 +59,12 @@ namespace Game.ConsoleApp
                             else
                             {
                                 numHumans = int.Parse(readLine);
+
+                                if (numHumans < 0 || numHumans > creatureList.Count)
+                                {
+                                    Console.WriteLine("Invalid number, please try again.");
+                                    numHumans = null;
+                                }
                             }
                         }
 
@@ -82,12 +88,24 @@ namespace Game.ConsoleApp
                             while (selectedPlayerCharacter == null)
                             {
                                 Console.WriteLine();
-                                Console.WriteLine($"{humanNames[j]}, which character would you like to be?  Press the number for the character you would like to play and press the <enter> key.");
+                                Console.WriteLine($"{humanNames[j]}, which character would you like to be?  Press the number for the character you would like to play and press the <enter> key, or <r> for random.");
                                 var choice = Console.ReadLine();
-                                selectedPlayerCharacter = creatureList.FirstOrDefault(x => x.CreatureId == int.Parse(choice ?? string.Empty));
-                                if (selectedPlayerCharacter == null)
+                                if (!string.IsNullOrWhiteSpace(choice))
                                 {
-                                    Console.WriteLine("Failed to determine character, let's try again.");
+                                    if (choice.ToLower() == "r")
+                                    {
+                                        creatureList.Shuffle();
+                                        selectedPlayerCharacter = creatureList.FirstOrDefault();
+                                    }
+                                    else
+                                    {
+                                        selectedPlayerCharacter = creatureList.FirstOrDefault(x => x.CreatureId == int.Parse(choice));
+                                    }
+
+                                    if (selectedPlayerCharacter == null)
+                                    {
+                                        Console.WriteLine("Failed to determine character, let's try again.");
+                                    }
                                 }
                             }
 
@@ -95,6 +113,29 @@ namespace Game.ConsoleApp
                             selectedPlayerCharacter.PlayerName = humanNames[j];
                             selectedPlayerCharacter.IsHuman = true;
                         }
+
+                        int cpuNumChoice;
+                        int availableChoices = creatureList.Count - numHumans.Value;
+                        while (true)
+                        {
+                            Console.WriteLine($"How many computer opponents would you prefer?  Enter a number between 0 and {availableChoices} and press the <enter> key.");
+                            var input = Console.ReadLine();
+                            if (!int.TryParse(input, out cpuNumChoice) || cpuNumChoice < 0 || cpuNumChoice > availableChoices)
+                            {
+                                Console.WriteLine("Failed to determine choice.  Please try again.");
+                            }
+                            else
+                            {
+                                break;
+                            }
+                        }
+
+                        // @todo: determine which computer opponents (random or manual)
+
+                        var tmpList = creatureList.Where(x => x.IsHuman == false).ToList();
+                        tmpList.Shuffle();
+                        creatureList.RemoveAll(x => x.IsHuman == false);
+                        creatureList.AddRange(tmpList.GetRange(0, cpuNumChoice));
                     }
 
                     GameEngine engine = new GameEngine(creatureList, useMightyPowers, writeToConsole);
