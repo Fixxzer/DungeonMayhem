@@ -266,7 +266,7 @@ namespace DungeonMayhem.Library
                         PlayCard(creature);
                         break;
                     case ActionType.MightyPower:
-                        LogLine("*Mighty Power!");
+                        LogMessage("*Mighty Power! ");
                         MightyPower(creature, card);
                         break;
                     case ActionType.DamageIgnoreShields:
@@ -405,7 +405,7 @@ namespace DungeonMayhem.Library
             return maxCard;
         }
 
-        private static string DisplayCard(Card specificCard)
+        private string DisplayCard(Card specificCard)
         {
             StringBuilder sb = new StringBuilder();
             sb.AppendLine(specificCard.Name);
@@ -429,7 +429,7 @@ namespace DungeonMayhem.Library
                         sb.AppendLine("Heal");
                         break;
                     case ActionType.MightyPower:
-                        sb.AppendLine("Mighty Power");
+                        sb.Append("Mighty Power - ");
                         sb.AppendLine(LookupMightyPowerText(specificCard.Name));
                         break;
                     case ActionType.Shapeshift:
