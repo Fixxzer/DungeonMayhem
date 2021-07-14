@@ -46,6 +46,9 @@ namespace Game.ConsoleApp
                     List<Creature> creatures = new List<Creature>();
                     if (isInteractive)
                     {
+                        Console.WriteLine();
+                        Console.WriteLine("Welcome to Dungeon Mayhem!");
+
                         var numberOfHumanPlayers = DetermineNumberOfHumanPlayers();
                         var humanNames = DetermineHumanNames(numberOfHumanPlayers);
                         var humanList = AssignHumansToCreatures(numberOfHumanPlayers, humanNames);
@@ -109,6 +112,7 @@ namespace Game.ConsoleApp
         {
             while (true)
             {
+                Console.WriteLine();
                 Console.WriteLine("Enter the amount of human players you would like and press the <enter> key");
                 string readLine = Console.ReadLine();
                 if (!int.TryParse(readLine, out var result) || result < 0)
@@ -126,6 +130,7 @@ namespace Game.ConsoleApp
         {
             while (true)
             {
+                Console.WriteLine();
                 Console.WriteLine("Enter the amount of computer players you would like and press the <enter> key");
                 string readLine = Console.ReadLine();
                 if (!int.TryParse(readLine, out var result) || result < 0)
@@ -147,6 +152,7 @@ namespace Game.ConsoleApp
                 string name = null;
                 while (string.IsNullOrWhiteSpace(name))
                 {
+                    Console.WriteLine();
                     Console.WriteLine($"Player {i + 1} please enter your name and press the <enter> key");
                     name = Console.ReadLine();
                 }
@@ -188,6 +194,12 @@ namespace Game.ConsoleApp
                             Console.WriteLine("Failed to determine character, let's try again.");
                         }
                     }
+
+                    if (humanList.Contains(selectedPlayerCharacter))
+                    {
+                        Console.WriteLine("That player has already been selected, please select another.");
+                        selectedPlayerCharacter = null;
+                    }
                 }
 
                 selectedPlayerCharacter.PlayerNumber = i + 1;
@@ -202,27 +214,28 @@ namespace Game.ConsoleApp
 
         private static IEnumerable<Creature> AssignComputerToCreatures(int numberOfComputerPlayers)
         {
-            DisplayCreatureList();
+            var availableCreatures = MasterCreatureList.Where(x => !x.IsHuman).ToList();
+            DisplayCreatureList(availableCreatures);
 
-            var computerList = new List<Creature>(numberOfComputerPlayers);
+            var playerList = new List<Creature>(numberOfComputerPlayers);
             for (int i = 0; i < numberOfComputerPlayers; i++)
             {
                 Creature selectedCharacter = null;
                 while (selectedCharacter == null)
                 {
                     Console.WriteLine();
-                    Console.WriteLine($"Which character would you like the computer player {i} to be?  Press the number for the character you would like to play and press the <enter> key, or <r> for random.");
+                    Console.WriteLine($"Which character would you like the computer player {i+1} to be?  Press the number for the character you would like to play and press the <enter> key, or <r> for random.");
                     var choice = Console.ReadLine();
                     if (!string.IsNullOrWhiteSpace(choice))
                     {
                         if (choice.ToLower() == "r")
                         {
-                            int randomNumber = new Random().Next(0, MasterCreatureList.Count);
-                            selectedCharacter = MasterCreatureList[randomNumber];
+                            int randomNumber = new Random().Next(0, availableCreatures.Count);
+                            selectedCharacter = availableCreatures[randomNumber];
                         }
                         else
                         {
-                            selectedCharacter = MasterCreatureList.FirstOrDefault(x => x.CreatureId == int.Parse(choice));
+                            selectedCharacter = availableCreatures.FirstOrDefault(x => x.CreatureId == int.Parse(choice));
                         }
 
                         if (selectedCharacter == null)
@@ -230,17 +243,24 @@ namespace Game.ConsoleApp
                             Console.WriteLine("Failed to determine character, let's try again.");
                         }
                     }
+
+                    if (playerList.Contains(selectedCharacter))
+                    {
+                        Console.WriteLine("That player has already been selected, please select another.");
+                        selectedCharacter = null;
+                    }
                 }
 
-                computerList.Add(selectedCharacter);
+                playerList.Add(selectedCharacter);
             }
 
-            return computerList;
+            return playerList;
         }
 
-        private static void DisplayCreatureList()
+        private static void DisplayCreatureList(IEnumerable<Creature> availableCreatures = null)
         {
-            foreach (var creature in MasterCreatureList)
+            Console.WriteLine();
+            foreach (var creature in availableCreatures ?? MasterCreatureList)
             {
                 Console.WriteLine($"{creature.CreatureId} - {creature.CreatureName}");
             }

@@ -34,6 +34,8 @@ namespace DungeonMayhem.Library
         {
             _creatures.Shuffle();
 
+            LogLine();
+            LogLine();
             LogLine("Starting a new game");
             LogLine("Play order will be:");
             foreach (var creature in _creatures)
@@ -52,9 +54,9 @@ namespace DungeonMayhem.Library
             while (true)
             {
                 StringBuilder sb = new StringBuilder();
-                sb.AppendLine("--------------------------");
+                sb.AppendLine("--------------------");
                 sb.AppendLine($"------ Round {round}:-----");
-                sb.AppendLine("--------------------------");
+                sb.AppendLine("--------------------");
                 foreach (var creature in _creatures.OrderByDescending(x => x.CurrentHitPoints).ThenByDescending(x => x.NumberOfShields))
                 {
                     sb.AppendLine($"\t{creature.CreatureName} with {creature.CurrentHitPoints} hit points and {creature.NumberOfShields} shield(s)");
@@ -163,13 +165,13 @@ namespace DungeonMayhem.Library
         {
             if (creature.IsHuman)
             {
-                Console.WriteLine();
-                Console.WriteLine("=============================================");
-                Console.WriteLine($"It's now your turn {creature.PlayerName}");
+                LogLine();
+                LogLine("=============================================");
+                LogLine($"It's now your turn {creature.PlayerName}");
                 if (specificCard != null)
                 {
-                    Console.WriteLine($"You must play {DisplayCard(specificCard)}");
-                    Console.WriteLine("Press any key to continue...");
+                    LogLine($"You must play {DisplayCard(specificCard)}");
+                    LogLine("Press any key to continue...");
                     Console.ReadKey();
                 }
                 else
@@ -177,15 +179,22 @@ namespace DungeonMayhem.Library
                     int optionNum = 1;
                     foreach (var handCard in creature.InHandDeck.CardDeck)
                     {
-                        Console.WriteLine($"{optionNum++} - {DisplayCard(handCard)}");
+                        LogLine($"{optionNum++} - {DisplayCard(handCard)}");
                     }
 
                     int? selectedNum = null;
                     while (selectedNum == null)
                     {
-                        Console.WriteLine("Please select a card to play, type the number and press the <enter> key to choose");
+                        LogLine("Please select a card to play, type the number and press the <enter> key to choose");
                         string option = Console.ReadLine();
                         selectedNum = int.Parse(option);
+
+                        if (selectedNum <= 0 || selectedNum > creature.InHandDeck.CardDeck.Count)
+                        {
+                            LogLine();
+                            LogLine("Invalid selection, please try again.");
+                            selectedNum = null;
+                        }
                     }
 
                     var selectedCard = creature.InHandDeck.CardDeck[selectedNum.Value - 1];
@@ -421,6 +430,7 @@ namespace DungeonMayhem.Library
                         break;
                     case ActionType.MightyPower:
                         sb.AppendLine("Mighty Power");
+                        sb.AppendLine(LookupMightyPowerText(specificCard.Name));
                         break;
                     case ActionType.Shapeshift:
                         sb.AppendLine("Shapeshift");
@@ -434,6 +444,83 @@ namespace DungeonMayhem.Library
             }
 
             return sb.ToString();
+        }
+
+        private string LookupMightyPowerText(string name)
+        {
+            switch (name)
+            {
+                case "Vampiric Touch": //Azzan
+                    return GetAzzanVampiricTouchText();
+                case "Fireball": //Azzan
+                    return GetAzzanFireballText();
+                case "Charm": //Azzan
+                    return GetAzzanCharmText();
+                case "Hugs!": //Blorp
+                    return GetBlorpHugsText();
+                case "Burped-Up Bones": //Blorp
+                    return GetBlorpBurpedUpBonesText();
+                case "Here I Come!": //Blorp
+                    return GetBlorpHereIComeText();
+                case "Praise Me": //Delilah
+                    return GetDelilahPraiseMeText();
+                case "Death Ray": //Delilah
+                    return GetDelilahDeathRayText();
+                case "Charm Ray": //Delilah
+                    return GetDelilahCharmRayText();
+                case "Mind Blast": //Dr. T
+                    return GetDrTMindBlastText();
+                case "Mind Games": //Dr. T
+                    return GetDrTMindGamesText();
+                case "Tell Me About Your Mother": // Dr. T
+                    return GetDrTTellMeAboutYourMotherText();
+                case "For My Next Trick...": //Hoots
+                    return GetHootsForMyNextTrickText();
+                case "To The Face!": //Hoots
+                    return GetHootsToTheFaceText();
+                case "Owlbear Boogie": //Hoots
+                    return GetHootsOwlbearBoogieText();
+                case "Primal Strike": //Jaheira
+                    return GetJaheiraPrimalStrikeText();
+                case "Commune With Nature": //Jaheira
+                    return GetJaheiraCommuneWithNatureText();
+                case "Divine Inspiration": //Lia
+                    return GetLiaDivineInspirationText();
+                case "Banishing Smite": //Lia
+                    return GetLiaBanishingSmiteText();
+                case "Liquidate Assets": //Lord C
+                    return GetLordCinderpuffLiquidateAssetsText();
+                case "Hostile Takeover": //Lord C
+                    return GetLordCinderpuffHostileTakeoverText();
+                case "Murders and Acquisitions": //Lord C
+                    return GetLordCinderpuffMurdersAndAcquisitionsText();
+                case "A Book (Cannot Bite)": //Mimi
+                    return GetMimiABookCannotBiteText();
+                case "It's Not a Trap": //Mimi
+                    return GetMimiItsNotATrapText();
+                case "Definitely Just a Mirror": //Mimi
+                    return GetMimiDefinitelyJustAMirrorText();
+                case "Swapportunity": //M&B
+                    return GetMinscAndBooSwapportunityText();
+                case "Scouting Outing": //M&B
+                    return GetMinscAndBooScoutingOutingText();
+                case "Favored Frienemies": //M&B
+                    return GetMinscAndBooFavoredFrienemiesText();
+                case "Clever Disguise": //Oriax
+                    return GetOriaxCleverDisguiseText();
+                case "Sneak Attack!": //Oriax
+                    return GetOriaxSneakAttackText();
+                case "Pick Pocket": //Oriax
+                    return GetOriaxPickPocketText();
+                case "Whirling Axes": //Sutha
+                    return GetSuthaWhirlingAxesText();
+                case "Battle Roar": //Sutha
+                    return GetSuthaBattleRoarText();
+                case "Mighty Toss": //Sutha
+                    return GetSuthaMightyTossText();
+                default:
+                    return "\tMighty Power Not Found!";
+            }
         }
 
         private static void PlayShapeshift(Creature creature, Card card)
@@ -470,6 +557,20 @@ namespace DungeonMayhem.Library
                     if (!attackList.Any())
                     {
                         break;
+                    }
+
+                    if (attacker.IsHuman)
+                    {
+                        DisplayCreatureList(attackList);
+
+                        Creature selectedTarget = null;
+                        while (selectedTarget == null)
+                        {
+                            LogLine($"{attacker.CreatureName} who would you like to attack?");
+                            var choice = Console.ReadLine();
+
+                            selectedTarget = attackList.FirstOrDefault(x => x.CreatureId == int.Parse(choice));
+                        }
                     }
                     //attackList.Shuffle();
                     attackTargets.Add(attackList.OrderByDescending(x => x.CurrentHitPoints).First());
@@ -675,7 +776,7 @@ namespace DungeonMayhem.Library
 
         private void AzzanVampiricTouch(Creature creature)
         {
-            LogLine("\tSwap your hit points with an opponent's.");
+            LogLine(GetAzzanVampiricTouchText());
 
             var ops = GetOpponents(creature);
             var maxHpOps = ops.OrderByDescending(x => x.CurrentHitPoints).FirstOrDefault();
@@ -693,9 +794,14 @@ namespace DungeonMayhem.Library
             LogLine($"\t{creature.CreatureName} has {creature.CurrentHitPoints} hit points, {maxHpOps.CreatureName} has {maxHpOps.CurrentHitPoints} hit points.");
         }
 
+        private string GetAzzanVampiricTouchText()
+        {
+            return "\tSwap your hit points with an opponent's.";
+        }
+
         private void AzzanFireball(Creature creature)
         {
-            LogLine("\tEach player (including you) takes 3 damage!");
+            LogLine(GetAzzanFireballText());
 
             foreach (var c in _creatures.Where(x => x.CurrentHitPoints > 0))
             {
@@ -717,9 +823,14 @@ namespace DungeonMayhem.Library
             }
         }
 
+        private string GetAzzanFireballText()
+        {
+            return "\tEach player (including you) takes 3 damage!";
+        }
+
         private void AzzanCharm(Creature creature)
         {
-            LogLine("\tTake the shields that an opponent has in play - it protects you now!");
+            LogLine(GetAzzanCharmText());
 
             // find the creature with the most shields
             var ops1 = GetOpponents(creature).Where(x => x.NumberOfShields > 0);
@@ -748,9 +859,14 @@ namespace DungeonMayhem.Library
             }
         }
 
+        private string GetAzzanCharmText()
+        {
+            return "\tTake the shields that an opponent has in play - it protects you now!";
+        }
+
         private void BlorpHugs(Creature creature)
         {
-            LogLine("\tDestroy a creature's shields and then heal for each shield destroyed.");
+            LogLine(GetBlorpHugsText());
 
             var creatureWithMostShields = _creatures.OrderByDescending(x => x.NumberOfShields).FirstOrDefault();
             if (creatureWithMostShields == null)
@@ -780,28 +896,50 @@ namespace DungeonMayhem.Library
             }
         }
 
+        private string GetBlorpHugsText()
+        {
+            return "\tDestroy a creature's shields and then heal for each shield destroyed.";
+        }
+
         private void BlorpBurpedUpBones()
         {
-            LogLine("\tAttack twice and gain 3 shields.");
+            LogLine(GetBlorpBurpedUpBonesText());
+
             // Actions are on the card
+        }
+
+        private string GetBlorpBurpedUpBonesText()
+        {
+            return "\tAttack twice and gain 3 shields.";
         }
 
         private void BlorpHereICome()
         {
-            LogLine("\tThis turn, your attack cards ignore shield cards.  Gain 3 attacks.");
+            LogLine(GetBlorpHereIComeText());
+
             // Actions are on the card
+        }
+
+        private string GetBlorpHereIComeText()
+        {
+            return "\tThis turn, your attack cards ignore shield cards.  Gain 3 attacks.";
         }
 
         private void DelilahPraiseMe()
         {
-            LogLine("\tDraw 3 cards, then, each opponent can choose to praise your greatness.  Double attack those who do not (not-implemented).");
+            LogLine(GetDelilahPraiseMeText());
 
             // Actions are on the card
         }
 
+        private string GetDelilahPraiseMeText()
+        {
+            return "\tDraw 3 cards, then, each opponent can choose to praise your greatness.  Double attack those who do not (not-implemented).";
+        }
+
         private void DelilahDeathRay(Creature creature)
         {
-            LogLine("\tDouble attack each opponent with no shield cards in play.  Then destroy all shield cards - including yours!");
+            LogLine(GetDelilahDeathRayText());
 
             var noShieldChars = _creatures.Where(x => x.NumberOfShields == 0 && x.CurrentHitPoints > 0 && x != creature).ToList();
 
@@ -821,9 +959,14 @@ namespace DungeonMayhem.Library
             }
         }
 
+        private string GetDelilahDeathRayText()
+        {
+            return "\tDouble attack each opponent with no shield cards in play.  Then destroy all shield cards - including yours!";
+        }
+
         private void DelilahCharmRay(Creature creature)
         {
-            LogLine("\tUntil your next turn, choose the target of all attack cards.");
+            LogLine(GetDelilahCharmRayText());
 
             var t = GetOpponents(creature).FirstOrDefault();
             if (t == null)
@@ -838,9 +981,14 @@ namespace DungeonMayhem.Library
             _isFirstTurn = true;
         }
 
+        private string GetDelilahCharmRayText()
+        {
+            return "\tUntil your next turn, choose the target of all attack cards.";
+        }
+
         private void DrTMindBlast(Creature creature)
         {
-            LogLine("\tAttack an opponent once for each card they have in their hand.");
+            LogLine(GetDrTMindBlastText());
 
             var chars = GetOpponents(creature).ToList();
             foreach (var target in chars)
@@ -852,9 +1000,14 @@ namespace DungeonMayhem.Library
             }
         }
 
+        private string GetDrTMindBlastText()
+        {
+            return "\tAttack an opponent once for each card they have in their hand.";
+        }
+
         private void DrTMindGames(Creature creature)
         {
-            LogLine("\tSwap your hand with an opponent's hand.");
+            LogLine(GetDrTMindGamesText());
 
             var targetList = GetOpponents(creature).ToList();
             targetList.Shuffle();
@@ -871,9 +1024,14 @@ namespace DungeonMayhem.Library
             LogLine($"\tSwapping hands with {t1.CreatureName}");
         }
 
+        private string GetDrTMindGamesText()
+        {
+            return "\tSwap your hand with an opponent's hand.";
+        }
+
         private void DrTTellMeAboutYourMother(Creature creature)
         {
-            LogLine("\tAdd the top card of each opponent's discard pile to your hand.");
+            LogLine(GetDrTTellMeAboutYourMotherText());
 
             foreach (var opponent in GetOpponents(creature))
             {
@@ -892,17 +1050,27 @@ namespace DungeonMayhem.Library
             }
         }
 
+        private string GetDrTTellMeAboutYourMotherText()
+        {
+            return "\tAdd the top card of each opponent's discard pile to your hand.";
+        }
+
         private void HootsForMyNextTrick(Creature creature)
         {
-            LogLine("\tUntil your next turn, your attacks hit all opponents.");
+            LogLine(GetHootsForMyNextTrickText());
 
             _specialAttackAllOverride = true;
             _currentTurn = creature;
         }
 
+        private string GetHootsForMyNextTrickText()
+        {
+            return "\tUntil your next turn, your attacks hit all opponents.";
+        }
+
         private void HootsToTheFace(Creature creature)
         {
-            LogLine("\tDestroy a shield card and then attack for each starting shield on that card.");
+            LogLine(GetHootsToTheFaceText());
 
             var (numOfShieldsOnCard, highestShieldCharacter) = DestroyShieldCardInPlay(creature);
 
@@ -913,9 +1081,14 @@ namespace DungeonMayhem.Library
             }
         }
 
+        private string GetHootsToTheFaceText()
+        {
+            return "\tDestroy a shield card and then attack for each starting shield on that card.";
+        }
+
         private void HootsOwlbearBoogie(Creature creature)
         {
-            LogLine($"\tEach player does a little dance and draws a card.  You then draw a card for each player who danced.");
+            LogLine(GetHootsOwlbearBoogieText());
 
             int count = 0;
             foreach (var c in GetOpponents(creature))
@@ -932,16 +1105,26 @@ namespace DungeonMayhem.Library
             LogLine($"\tYou draw {count} card(s).");
         }
 
+        private string GetHootsOwlbearBoogieText()
+        {
+            return $"\tEach player does a little dance and draws a card.  You then draw a card for each player who danced.";
+        }
+
         private void JaheiraPrimalStrike(Creature creature)
         {
-            LogLine("\tYou make an animal noise and attack each opponent.");
+            LogLine(GetJaheiraPrimalStrikeText());
 
             Attack(creature, AttackType.Opponents, null, false, true);
         }
 
+        private string GetJaheiraPrimalStrikeText()
+        {
+            return "\tYou make an animal noise and attack each opponent.";
+        }
+
         private void JaheiraCommuneWithNature(Creature creature)
         {
-            LogLine("\tYou may play a Form card for free.");
+            LogLine(GetJaheiraCommuneWithNatureText());
 
             var shapeshiftCardInHand = creature.InHandDeck.CardDeck.FirstOrDefault(cardInHand => cardInHand.Name.StartsWith("Shapeshift"));
 
@@ -955,9 +1138,14 @@ namespace DungeonMayhem.Library
             }
         }
 
+        private string GetJaheiraCommuneWithNatureText()
+        {
+            return "\tYou may play a Form card for free.";
+        }
+
         private void LiaDivineInspiration(Creature creature)
         {
-            LogLine("\tChoose any card in your discard pile and put it into your hand, then heal twice");
+            LogLine(GetLiaDivineInspirationText());
 
             if (creature.DiscardDeck.CardDeck.Count == 0)
             {
@@ -972,9 +1160,14 @@ namespace DungeonMayhem.Library
             LogLine($"\tMoving {randomDiscard.Name} to hand.");
         }
 
+        private string GetLiaDivineInspirationText()
+        {
+            return "\tChoose any card in your discard pile and put it into your hand, then heal twice";
+        }
+
         private void LiaBanishingSmite()
         {
-            LogLine("\tDestroy all shield cards in play (including yours), then go again.");
+            LogLine(GetLiaBanishingSmiteText());
 
             foreach (var creature1 in _creatures.Where(x => x.CurrentHitPoints > 0 && x.NumberOfShields > 0))
             {
@@ -985,9 +1178,14 @@ namespace DungeonMayhem.Library
             }
         }
 
+        private string GetLiaBanishingSmiteText()
+        {
+            return "\tDestroy all shield cards in play (including yours), then go again.";
+        }
+
         private void LordCinderpuffLiquidateAssets(Creature creature)
         {
-            LogLine("\tDiscard your hand and attack equal to the number of cards discarded.");
+            LogLine(GetLordCinderpuffLiquidateAssetsText());
 
             int numAttacks = creature.InHandDeck.CardDeck.Count;
             LogLine($"\tYou have {numAttacks} card(s) in your hand, and get to attack {numAttacks} time(s).");
@@ -999,9 +1197,14 @@ namespace DungeonMayhem.Library
             }
         }
 
+        private string GetLordCinderpuffLiquidateAssetsText()
+        {
+            return "\tDiscard your hand and attack equal to the number of cards discarded.";
+        }
+
         private void LordCinderpuffHostileTakeover(Creature creature)
         {
-            LogLine("\tAttack all opponents, double attack one opponent, then attack a different opponent.");
+            LogLine(GetLordCinderpuffHostileTakeoverText());
 
             // Attack all
             LogLine();
@@ -1045,9 +1248,14 @@ namespace DungeonMayhem.Library
             Attack(creature, AttackType.Specific, op);
         }
 
+        private string GetLordCinderpuffHostileTakeoverText()
+        {
+            return "\tAttack all opponents, double attack one opponent, then attack a different opponent.";
+        }
+
         private void LordCinderpuffMurdersAndAcquisitions(Creature creature)
         {
-            LogLine("\tEach player must attack, heal, or draw.  Start with you and go right.  You repeat all choices.");
+            LogLine(GetLordCinderpuffMurdersAndAcquisitionsText());
 
             // Start with me
             int r = new Random().Next(0, 3);
@@ -1086,9 +1294,14 @@ namespace DungeonMayhem.Library
             }
         }
 
+        private string GetLordCinderpuffMurdersAndAcquisitionsText()
+        {
+            return "\tEach player must attack, heal, or draw.  Start with you and go right.  You repeat all choices.";
+        }
+
         private void MimiABookCannotBite(Creature creature)
         {
-            LogLine("\tUse the top-listed Mighty Power of the player to your left or right");
+            LogLine(GetMimiABookCannotBiteText());
 
             var indexOf = _creatures.IndexOf(creature);
             if (indexOf == 0)
@@ -1123,9 +1336,14 @@ namespace DungeonMayhem.Library
             }
         }
 
+        private string GetMimiABookCannotBiteText()
+        {
+            return "\tUse the top-listed Mighty Power of the player to your left or right";
+        }
+
         private void MimiItsNotATrap(Creature creature)
         {
-            LogLine("\tMake one player's hit points equal to another player's hit points");
+            LogLine(GetMimiItsNotATrapText());
 
             var aliveCreatures = _creatures.Where(x => x.CurrentHitPoints > 0 && x != creature).OrderBy(x => x.CurrentHitPoints).ToList();
             var lowest = aliveCreatures.FirstOrDefault();
@@ -1138,9 +1356,14 @@ namespace DungeonMayhem.Library
             }
         }
 
+        private string GetMimiItsNotATrapText()
+        {
+            return "\tMake one player's hit points equal to another player's hit points";
+        }
+
         private void MimiDefinitelyJustAMirror(Creature creature)
         {
-            LogLine("\tPlay this card as a copy of any other shield card in play");
+            LogLine(GetMimiDefinitelyJustAMirrorText());
 
             var (_, c3) = GetMaxShieldCardFromOpponents(creature);
             if (c3 != null)
@@ -1149,9 +1372,14 @@ namespace DungeonMayhem.Library
             }
         }
 
+        private string GetMimiDefinitelyJustAMirrorText()
+        {
+            return "\tPlay this card as a copy of any other shield card in play";
+        }
+
         private void MinscAndBooSwapportunity()
         {
-            LogLine("\tEach player gives their hit point total to the player on their right");
+            LogLine(GetMinscAndBooSwapportunityText());
 
             int tmpHitPoints = 0;
             var players = _creatures.Where(x => x.CurrentHitPoints > 0).ToList();
@@ -1173,9 +1401,14 @@ namespace DungeonMayhem.Library
             }
         }
 
+        private string GetMinscAndBooSwapportunityText()
+        {
+            return "\tEach player gives their hit point total to the player on their right";
+        }
+
         private void MinscAndBooScoutingOuting(Creature creature)
         {
-            LogLine("\tDraw a card from the top of each opponent's deck");
+            LogLine(GetMinscAndBooScoutingOutingText());
 
             foreach (var creature1 in GetOpponents(creature))
             {
@@ -1221,35 +1454,55 @@ namespace DungeonMayhem.Library
             }
         }
 
+        private string GetMinscAndBooScoutingOutingText()
+        {
+            return "\tDraw a card from the top of each opponent's deck";
+        }
+
         private void MinscAndBooFavoredFrienemies(Creature creature)
         {
-            LogLine("\tYour attack cards deal one bonus damage this turn");
+            LogLine(GetMinscAndBooFavoredFrienemiesText());
 
             _specialAttackBonusDamageOverride = true;
             _currentTurn = creature;
         }
 
+        private string GetMinscAndBooFavoredFrienemiesText()
+        {
+            return "\tYour attack cards deal one bonus damage this turn";
+        }
+
         private void OriaxCleverDisguise(Creature creature)
         {
-            LogLine("\tNone of your opponents' cards affect you or your shield cards until your next turn.");
+            LogLine(GetOriaxCleverDisguiseText());
 
             _specialUntargetable = true;
             _untargetableCreature = creature;
             _currentTurn = creature;
         }
 
+        private string GetOriaxCleverDisguiseText()
+        {
+            return "\tNone of your opponents' cards affect you or your shield cards until your next turn.";
+        }
+
         private void OriaxSneakAttack(Creature creature)
         {
-            LogLine("\tDestroy one shield card in play, then play again.");
+            LogLine(GetOriaxSneakAttackText());
 
             DestroyShieldCardInPlay(creature);
 
             // Play again action is on the card
         }
 
+        private string GetOriaxSneakAttackText()
+        {
+            return "\tDestroy one shield card in play, then play again.";
+        }
+
         private void OriaxPickPocket(Creature creature)
         {
-            LogLine("\tSteal the top card of any player's deck and play it.");
+            LogLine(GetOriaxPickPocketText());
 
             var ops2 = GetOpponents(creature).ToList();
             ops2.Shuffle();
@@ -1274,9 +1527,14 @@ namespace DungeonMayhem.Library
             PlayCard(creature, cardToPlay);
         }
 
+        private string GetOriaxPickPocketText()
+        {
+            return "\tSteal the top card of any player's deck and play it.";
+        }
+
         private void SuthaWhirlingAxes(Creature creature)
         {
-            LogLine("\tYou heal once per opponent, then attack each opponent.");
+            LogLine(GetSuthaWhirlingAxesText());
 
             foreach (var opponent in GetOpponents(creature))
             {
@@ -1285,9 +1543,14 @@ namespace DungeonMayhem.Library
             }
         }
 
+        private string GetSuthaWhirlingAxesText()
+        {
+            return "\tYou heal once per opponent, then attack each opponent.";
+        }
+
         private void SuthaBattleRoar()
         {
-            LogLine("\tEach player (including you) discards their hand, then draws three cards.  Then play again.");
+            LogLine(GetSuthaBattleRoarText());
 
             foreach (var c in _creatures)
             {
@@ -1302,12 +1565,22 @@ namespace DungeonMayhem.Library
             // Play again action is on the card
         }
 
+        private string GetSuthaBattleRoarText()
+        {
+            return "\tEach player (including you) discards their hand, then draws three cards.  Then play again.";
+        }
+
         private void SuthaMightyToss(Creature creature)
         {
-            LogLine("\tDestroy one shield card in play, then draw a card.");
+            LogLine(GetSuthaMightyTossText());
 
             DestroyShieldCardInPlay(creature);
             // Draw action is on the card
+        }
+
+        private string GetSuthaMightyTossText()
+        {
+            return"\tDestroy one shield card in play, then draw a card.";
         }
 
         #endregion
@@ -1398,6 +1671,17 @@ namespace DungeonMayhem.Library
             {
                 Console.Write(message);
             }
+        }
+
+        private void DisplayCreatureList(IEnumerable<Creature> creatureList)
+        {
+            LogLine();
+            foreach (var creature in creatureList)
+            {
+                LogLine($"{creature.CreatureId} - {creature.CreatureName}");
+            }
+
+            LogLine();
         }
     }
 }
