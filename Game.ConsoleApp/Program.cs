@@ -8,30 +8,14 @@ namespace Game.ConsoleApp
 {
     internal class Program
     {
-        private static readonly List<Creature> MasterCreatureList = new List<Creature>
-        {
-            new Creature(1, "Azzan", "Azzan.json"),
-            new Creature(2, "Blorp", "Blorp.json"),
-            new Creature(3, "Delilah Deathray", "DelilahDeathray.json"),
-            new Creature(4, "Dr. Tentaculous", "DrTentaculous.json"),
-            new Creature(5, "Hoots McGoots", "HootsMcGoots.json"),
-            new Creature(6, "Jaheira", "Jaheira.json"),
-            new Creature(7, "Lia", "Lia.json"),
-            new Creature(8, "Lord Cinderpuff", "LordCinderpuff.json"),
-            new Creature(9, "Mimi LeChaise", "MimiLeChaise.json"),
-            new Creature(10, "Minsc & Boo", "MinscAndBoo.json"),
-            new Creature(11, "Oriax", "Oriax.json"),
-            new Creature(12, "Sutha", "Sutha.json")
-        };
-
         private static void Main()
         {
             try
             {
-                const int numGames = 1;
+                const int numGames = 1000;
                 const bool useMightyPowers = true;
                 const bool writeToConsole = true;
-                const bool isInteractive = true;
+                const bool isInteractive = false;
 
                 Stopwatch sw1 = new Stopwatch();
                 Stopwatch sw2 = new Stopwatch();
@@ -43,7 +27,23 @@ namespace Game.ConsoleApp
 
                 for (int i = 1; i <= numGames; i++)
                 {
-                    List<Creature> creatures = new List<Creature>();
+                    var masterCreatureList = new List<Creature>
+                    {
+                        new Creature(1, "Azzan", "Azzan.json"),
+                        new Creature(2, "Blorp", "Blorp.json"),
+                        new Creature(3, "Delilah Deathray", "DelilahDeathray.json"),
+                        new Creature(4, "Dr. Tentaculous", "DrTentaculous.json"),
+                        new Creature(5, "Hoots McGoots", "HootsMcGoots.json"),
+                        new Creature(6, "Jaheira", "Jaheira.json"),
+                        new Creature(7, "Lia", "Lia.json"),
+                        new Creature(8, "Lord Cinderpuff", "LordCinderpuff.json"),
+                        new Creature(9, "Mimi LeChaise", "MimiLeChaise.json"),
+                        new Creature(10, "Minsc & Boo", "MinscAndBoo.json"),
+                        new Creature(11, "Oriax", "Oriax.json"),
+                        new Creature(12, "Sutha", "Sutha.json")
+                    };
+
+                    var creatures = new List<Creature>();
                     if (isInteractive)
                     {
                         Console.WriteLine();
@@ -51,23 +51,23 @@ namespace Game.ConsoleApp
 
                         var numberOfHumanPlayers = DetermineNumberOfHumanPlayers();
                         var humanNames = DetermineHumanNames(numberOfHumanPlayers);
-                        var humanList = AssignHumansToCreatures(numberOfHumanPlayers, humanNames);
+                        var humanList = AssignHumansToCreatures(numberOfHumanPlayers, humanNames, masterCreatureList);
                         creatures.AddRange(humanList);
 
                         var numberOfComputerPlayers = DetermineNumberOfComputerPlayers();
-                        var computerList = AssignComputerToCreatures(numberOfComputerPlayers);
+                        var computerList = AssignComputerToCreatures(numberOfComputerPlayers, masterCreatureList);
                         creatures.AddRange(computerList);
                     }
                     else
                     {
-                        creatures.AddRange(MasterCreatureList);
+                        creatures.AddRange(masterCreatureList);
                     }
 
                     GameEngine engine = new GameEngine(creatures, useMightyPowers, writeToConsole, isInteractive);
                     var winOrder = engine.GameLoop();
                     stats.Add(winOrder);
 
-                    if (i % 1000 == 0)
+                    if (i % 500 == 0)
                     {
                         Console.WriteLine($"Playing game {i} in {sw2.Elapsed}");
                         sw2.Restart();
@@ -163,9 +163,9 @@ namespace Game.ConsoleApp
             return humanNames;
         }
 
-        private static IEnumerable<Creature> AssignHumansToCreatures(int numberOfHumans, IReadOnlyList<string> humanNameList)
+        private static IEnumerable<Creature> AssignHumansToCreatures(int numberOfHumans, IReadOnlyList<string> humanNameList, IReadOnlyList<Creature> masterCreatureList)
         {
-            DisplayCreatureList();
+            DisplayCreatureList(masterCreatureList);
 
             var humanList = new List<Creature>(numberOfHumans);
 
@@ -181,12 +181,15 @@ namespace Game.ConsoleApp
                     {
                         if (choice.ToLower() == "r")
                         {
-                            int randomNumber = new Random().Next(0, MasterCreatureList.Count);
-                            selectedPlayerCharacter = MasterCreatureList[randomNumber];
+                            while (!humanList.Contains(selectedPlayerCharacter))
+                            {
+                                int randomNumber = new Random().Next(0, masterCreatureList.Count);
+                                selectedPlayerCharacter = masterCreatureList[randomNumber];
+                            }
                         }
                         else
                         {
-                            selectedPlayerCharacter = MasterCreatureList.FirstOrDefault(x => x.CreatureId == int.Parse(choice));
+                            selectedPlayerCharacter = masterCreatureList.FirstOrDefault(x => x.CreatureId == int.Parse(choice));
                         }
 
                         if (selectedPlayerCharacter == null)
@@ -212,9 +215,9 @@ namespace Game.ConsoleApp
             return humanList;
         }
 
-        private static IEnumerable<Creature> AssignComputerToCreatures(int numberOfComputerPlayers)
+        private static IEnumerable<Creature> AssignComputerToCreatures(int numberOfComputerPlayers, IEnumerable<Creature> masterCreatureList)
         {
-            var availableCreatures = MasterCreatureList.Where(x => !x.IsHuman).ToList();
+            var availableCreatures = masterCreatureList.Where(x => !x.IsHuman).ToList();
             DisplayCreatureList(availableCreatures);
 
             var playerList = new List<Creature>(numberOfComputerPlayers);
@@ -230,8 +233,11 @@ namespace Game.ConsoleApp
                     {
                         if (choice.ToLower() == "r")
                         {
-                            int randomNumber = new Random().Next(0, availableCreatures.Count);
-                            selectedCharacter = availableCreatures[randomNumber];
+                            while (!playerList.Contains(selectedCharacter))
+                            {
+                                int randomNumber = new Random().Next(0, availableCreatures.Count);
+                                selectedCharacter = availableCreatures[randomNumber];
+                            }
                         }
                         else
                         {
@@ -257,10 +263,10 @@ namespace Game.ConsoleApp
             return playerList;
         }
 
-        private static void DisplayCreatureList(IEnumerable<Creature> availableCreatures = null)
+        private static void DisplayCreatureList(IEnumerable<Creature> masterCreatureList, IEnumerable<Creature> availableCreatures = null)
         {
             Console.WriteLine();
-            foreach (var creature in availableCreatures ?? MasterCreatureList)
+            foreach (var creature in availableCreatures ?? masterCreatureList)
             {
                 Console.WriteLine($"{creature.CreatureId} - {creature.CreatureName}");
             }

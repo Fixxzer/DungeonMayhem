@@ -88,6 +88,11 @@ namespace DungeonMayhem.Library
                         // Play a card
                         PlayCard(creature);
                     }
+                    else
+                    {
+                        // This is needed to toggle off the special abilities of the defeated players
+                        PlayCard(creature, null);
+                    }
 
                     // Evaluate Game End scenario
                     var aliveCreatures = _creatures.Where(x => x.CurrentHitPoints > 0).ToList();
@@ -226,6 +231,12 @@ namespace DungeonMayhem.Library
             {
                 _specialUntargetable = false;
                 _untargetableCreature = null;
+            }
+
+            // This is needed to let the special attacks reset
+            if (creature.CurrentHitPoints <= 0)
+            {
+                return;
             }
 
             var card = specificCard ?? RetrieveCardFromHand(creature);
@@ -368,11 +379,22 @@ namespace DungeonMayhem.Library
                     return shieldCard;
                 }
             }
-
+            
+            // Check again if out of cards, draw twice
+            if (creature.InHandDeck.CardDeck.Count <= 0)
+            {
+                DrawCard(creature);
+                DrawCard(creature);
+            }
+            
             // Otherwise randomize
             creature.InHandDeck.CardDeck.Shuffle();
+            var card = creature.InHandDeck.CardDeck.FirstOrDefault();
+            if (card == null)
+            {
+                Console.WriteLine();
+            }
 
-            var card = creature.InHandDeck.CardDeck.First();
             return card;
         }
 
@@ -510,7 +532,7 @@ namespace DungeonMayhem.Library
                     return GetOriaxCleverDisguiseText();
                 case "Sneak Attack!": //Oriax
                     return GetOriaxSneakAttackText();
-                case "Pick Pocket": //Oriax
+                case "PickPocket": //Oriax
                     return GetOriaxPickPocketText();
                 case "Whirling Axes": //Sutha
                     return GetSuthaWhirlingAxesText();
