@@ -72,9 +72,20 @@ namespace DungeonMayhem.Library
                     {
                         LogLine();
                         var optionalPlayerName = !string.IsNullOrWhiteSpace(creature.PlayerName) ? $" ({creature.PlayerName})" : string.Empty;
-                        LogLine($"--- {creature.CreatureName}{optionalPlayerName}'s turn.  Hit Point(s): {creature.CurrentHitPoints}, Shield(s): {creature.NumberOfShields} ---");
+                        LogLine($"--- {creature.CreatureName}{optionalPlayerName}'s turn. |  Hit Point(s): {creature.CurrentHitPoints} | Shield(s): {creature.NumberOfShields} ---");
                         if (_isInteractive)
                         {
+                            if (creature.IsHuman)
+                            {
+                                StringBuilder sb2 = new StringBuilder();
+                                foreach (var c in GetOpponents(creature))
+                                {
+                                    sb2.AppendLine($"{c.CreatureName} | HP: {c.CurrentHitPoints} | Shield(s): {c.NumberOfShields}");
+                                }
+
+                                LogLine(sb2.ToString());
+                            }
+
                             Prompt();
                         } 
                         LogLine();
@@ -168,7 +179,7 @@ namespace DungeonMayhem.Library
 
         private void PlayCard(Creature creature, Card specificCard = null)
         {
-            if (creature.IsHuman)
+            if (creature.IsHuman && creature.CurrentHitPoints > 0)
             {
                 LogLine();
                 LogLine("=============================================");
@@ -585,17 +596,27 @@ namespace DungeonMayhem.Library
                     {
                         DisplayCreatureList(attackList);
 
-                        Creature selectedTarget = null;
-                        while (selectedTarget == null)
+                        while (true)
                         {
                             LogLine($"{attacker.CreatureName} who would you like to attack?");
                             var choice = Console.ReadLine();
+                            
+                            if (int.TryParse(choice, out var result))
+                            {
+                                if (result > 0 && result <= attackList.Count)
+                                {
+                                    attackTargets.Add(attackList[result - 1]);
+                                    break;
+                                }
+                            }
 
-                            selectedTarget = attackList.FirstOrDefault(x => x.CreatureId == int.Parse(choice));
+                            LogLine("Unable to determine target, please try again.");
                         }
                     }
-                    //attackList.Shuffle();
-                    attackTargets.Add(attackList.OrderByDescending(x => x.CurrentHitPoints).First());
+                    else
+                    {
+                        attackTargets.Add(attackList.OrderByDescending(x => x.CurrentHitPoints).First());
+                    }
                     break;
                 case AttackType.All:
                     attackTargets.AddRange(GetAliveCreatures());
@@ -1698,9 +1719,10 @@ namespace DungeonMayhem.Library
         private void DisplayCreatureList(IEnumerable<Creature> creatureList)
         {
             LogLine();
+            int count = 1;
             foreach (var creature in creatureList)
             {
-                LogLine($"{creature.CreatureId} - {creature.CreatureName}");
+                LogLine($"{count++} - {creature.CreatureName}");
             }
 
             LogLine();

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -12,10 +13,10 @@ namespace Game.ConsoleApp
         {
             try
             {
-                const int numGames = 1000;
+                const int numGames = 1;
                 const bool useMightyPowers = true;
                 const bool writeToConsole = true;
-                const bool isInteractive = false;
+                const bool isInteractive = true;
 
                 Stopwatch sw1 = new Stopwatch();
                 Stopwatch sw2 = new Stopwatch();
@@ -49,13 +50,15 @@ namespace Game.ConsoleApp
                         Console.WriteLine();
                         Console.WriteLine("Welcome to Dungeon Mayhem!");
 
-                        var numberOfHumanPlayers = DetermineNumberOfHumanPlayers();
+                        var availableCreatures = new List<Creature>(masterCreatureList);
+
+                        var numberOfHumanPlayers = DetermineNumberOfHumanPlayers(availableCreatures);
                         var humanNames = DetermineHumanNames(numberOfHumanPlayers);
-                        var humanList = AssignHumansToCreatures(numberOfHumanPlayers, humanNames, masterCreatureList);
+                        var humanList = AssignHumansToCreatures(numberOfHumanPlayers, humanNames, availableCreatures);
                         creatures.AddRange(humanList);
 
-                        var numberOfComputerPlayers = DetermineNumberOfComputerPlayers();
-                        var computerList = AssignComputerToCreatures(numberOfComputerPlayers, masterCreatureList);
+                        var numberOfComputerPlayers = DetermineNumberOfComputerPlayers(availableCreatures);
+                        var computerList = AssignComputerToCreatures(numberOfComputerPlayers, availableCreatures);
                         creatures.AddRange(computerList);
                     }
                     else
@@ -108,38 +111,37 @@ namespace Game.ConsoleApp
             }
         }
 
-        private static int DetermineNumberOfHumanPlayers()
+        private static int DetermineNumberOfHumanPlayers(ICollection availableCreatures)
         {
             while (true)
             {
                 Console.WriteLine();
-                Console.WriteLine("Enter the amount of human players you would like and press the <enter> key");
+                Console.WriteLine($"Enter the amount of human players you would like between 0 and {availableCreatures.Count} and press the <enter> key");
                 string readLine = Console.ReadLine();
-                if (!int.TryParse(readLine, out var result) || result < 0)
-                {
-                    Console.WriteLine("Invalid number, please try again.");
-                }
-                else
+                if (int.TryParse(readLine, out var result) && result >= 0 && result <= availableCreatures.Count)
                 {
                     return result;
                 }
+
+                Console.WriteLine("Invalid number, please try again.");
             }
         }
 
-        private static int DetermineNumberOfComputerPlayers()
+        private static int DetermineNumberOfComputerPlayers(IReadOnlyCollection<Creature> availableCreatures)
         {
+            DisplayCreatureList(availableCreatures);
             while (true)
             {
                 Console.WriteLine();
-                Console.WriteLine("Enter the amount of computer players you would like and press the <enter> key");
+                Console.WriteLine($"Enter the amount of computer players you would like between 0 and {availableCreatures.Count} and press the <enter> key");
                 string readLine = Console.ReadLine();
-                if (!int.TryParse(readLine, out var result) || result < 0)
+                if (int.TryParse(readLine, out var result) && result >= 0 && result <= availableCreatures.Count)
                 {
-                    Console.WriteLine("Invalid number, please try again.");
+                    return result;
                 }
                 else
                 {
-                    return result;
+                    Console.WriteLine("Invalid number, please try again.");
                 }
             }
         }
@@ -163,16 +165,14 @@ namespace Game.ConsoleApp
             return humanNames;
         }
 
-        private static IEnumerable<Creature> AssignHumansToCreatures(int numberOfHumans, IReadOnlyList<string> humanNameList, IReadOnlyList<Creature> masterCreatureList)
+        private static IEnumerable<Creature> AssignHumansToCreatures(int numberOfPlayers, IReadOnlyList<string> humanNameList, IList<Creature> availableCreatures)
         {
-            DisplayCreatureList(masterCreatureList);
+            var playerList = new List<Creature>(numberOfPlayers);
 
-            var humanList = new List<Creature>(numberOfHumans);
-
-            for (int i = 0; i < numberOfHumans; i++)
+            for (int i = 0; i < numberOfPlayers; i++)
             {
-                Creature selectedPlayerCharacter = null;
-                while (selectedPlayerCharacter == null)
+                DisplayCreatureList(availableCreatures);
+                while (true)
                 {
                     Console.WriteLine();
                     Console.WriteLine($"{humanNameList[i]}, which character would you like to be?  Press the number for the character you would like to play and press the <enter> key, or <r> for random.");
@@ -181,83 +181,89 @@ namespace Game.ConsoleApp
                     {
                         if (choice.ToLower() == "r")
                         {
-                            while (!humanList.Contains(selectedPlayerCharacter))
+                            int randomNumber = new Random().Next(0, availableCreatures.Count);
+                            availableCreatures[randomNumber].PlayerNumber = i + 1;
+                            availableCreatures[randomNumber].PlayerName = humanNameList[i];
+                            availableCreatures[randomNumber].IsHuman = true;
+                            
+                            playerList.Add(availableCreatures[randomNumber]);
+                            availableCreatures.RemoveAt(randomNumber);
+                            break;
+                        }
+
+                        if (int.TryParse(choice, out var result))
+                        {
+                            result -= 1;
+                            if (result >= 0 && result < availableCreatures.Count)
                             {
-                                int randomNumber = new Random().Next(0, masterCreatureList.Count);
-                                selectedPlayerCharacter = masterCreatureList[randomNumber];
+                                availableCreatures[result].PlayerNumber = i + 1;
+                                availableCreatures[result].PlayerName = humanNameList[i];
+                                availableCreatures[result].IsHuman = true;
+
+                                playerList.Add(availableCreatures[result]);
+                                availableCreatures.RemoveAt(result);
+                                break;
                             }
                         }
-                        else
-                        {
-                            selectedPlayerCharacter = masterCreatureList.FirstOrDefault(x => x.CreatureId == int.Parse(choice));
-                        }
-
-                        if (selectedPlayerCharacter == null)
-                        {
-                            Console.WriteLine("Failed to determine character, let's try again.");
-                        }
                     }
 
-                    if (humanList.Contains(selectedPlayerCharacter))
-                    {
-                        Console.WriteLine("That player has already been selected, please select another.");
-                        selectedPlayerCharacter = null;
-                    }
+                    Console.WriteLine("Failed to determine character, let's try again.");
                 }
-
-                selectedPlayerCharacter.PlayerNumber = i + 1;
-                selectedPlayerCharacter.PlayerName = humanNameList[i];
-                selectedPlayerCharacter.IsHuman = true;
-
-                humanList.Add(selectedPlayerCharacter);
             }
 
-            return humanList;
+            return playerList;
         }
 
-        private static IEnumerable<Creature> AssignComputerToCreatures(int numberOfComputerPlayers, IEnumerable<Creature> masterCreatureList)
+        private static IEnumerable<Creature> AssignComputerToCreatures(int numberOfPlayers, IList<Creature> availableCreatures)
         {
-            var availableCreatures = masterCreatureList.Where(x => !x.IsHuman).ToList();
-            DisplayCreatureList(availableCreatures);
+            var playerList = new List<Creature>(numberOfPlayers);
 
-            var playerList = new List<Creature>(numberOfComputerPlayers);
-            for (int i = 0; i < numberOfComputerPlayers; i++)
+            for (int i = 0; i < numberOfPlayers; i++)
             {
-                Creature selectedCharacter = null;
-                while (selectedCharacter == null)
+                DisplayCreatureList(availableCreatures);
+                while (true)
                 {
                     Console.WriteLine();
-                    Console.WriteLine($"Which character would you like the computer player {i+1} to be?  Press the number for the character you would like to play and press the <enter> key, or <r> for random.");
+                    Console.WriteLine($"Which character would you like the computer player {i + 1} to be?  Press the number for the character you would like to play and press the <enter> key, or <r> for random, or <a> to randomize all of them.");
                     var choice = Console.ReadLine();
                     if (!string.IsNullOrWhiteSpace(choice))
                     {
                         if (choice.ToLower() == "r")
                         {
-                            while (!playerList.Contains(selectedCharacter))
+                            int randomNumber = new Random().Next(0, availableCreatures.Count);
+                            playerList.Add(availableCreatures[randomNumber]);
+                            availableCreatures.Remove(availableCreatures[randomNumber]);
+                            break;
+                        }
+
+                        if (choice.ToLower() == "a")
+                        {
+                            int count = 0;
+                            while (availableCreatures.Any() && count < numberOfPlayers)
                             {
                                 int randomNumber = new Random().Next(0, availableCreatures.Count);
-                                selectedCharacter = availableCreatures[randomNumber];
+                                playerList.Add(availableCreatures[randomNumber]);
+                                availableCreatures.Remove(availableCreatures[randomNumber]);
+                                count++;
+                            }
+
+                            return playerList;
+                        }
+
+                        if (int.TryParse(choice, out var result))
+                        {
+                            result -= 1;
+                            if (result >= 0 && result < availableCreatures.Count)
+                            {
+                                playerList.Add(availableCreatures[result]);
+                                availableCreatures.Remove(availableCreatures[result]);
+                                break;
                             }
                         }
-                        else
-                        {
-                            selectedCharacter = availableCreatures.FirstOrDefault(x => x.CreatureId == int.Parse(choice));
-                        }
-
-                        if (selectedCharacter == null)
-                        {
-                            Console.WriteLine("Failed to determine character, let's try again.");
-                        }
                     }
 
-                    if (playerList.Contains(selectedCharacter))
-                    {
-                        Console.WriteLine("That player has already been selected, please select another.");
-                        selectedCharacter = null;
-                    }
+                    Console.WriteLine("Failed to determine character, let's try again.");
                 }
-
-                playerList.Add(selectedCharacter);
             }
 
             return playerList;
@@ -266,9 +272,10 @@ namespace Game.ConsoleApp
         private static void DisplayCreatureList(IEnumerable<Creature> masterCreatureList, IEnumerable<Creature> availableCreatures = null)
         {
             Console.WriteLine();
+            int count = 1;
             foreach (var creature in availableCreatures ?? masterCreatureList)
             {
-                Console.WriteLine($"{creature.CreatureId} - {creature.CreatureName}");
+                Console.WriteLine($"{count++} - {creature.CreatureName}");
             }
             Console.WriteLine();
         }
