@@ -13,10 +13,10 @@ namespace Game.ConsoleApp
         {
             try
             {
-                const int numGames = 1;
+                const int numGames = 100;
                 const bool useMightyPowers = true;
                 const bool writeToConsole = true;
-                const bool isInteractive = true;
+                const bool isInteractive = false;
 
                 Stopwatch sw1 = new Stopwatch();
                 Stopwatch sw2 = new Stopwatch();

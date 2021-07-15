@@ -1,7 +1,7 @@
 {
     "CardDeck": [
       {
-        "Name": "PickPocket",
+        "Name": "Pick Pocket",
         "Actions": [
           { "ActionType": 5 }
         ]

@@ -543,7 +543,7 @@ namespace DungeonMayhem.Library
                     return GetOriaxCleverDisguiseText();
                 case "Sneak Attack!": //Oriax
                     return GetOriaxSneakAttackText();
-                case "PickPocket": //Oriax
+                case "Pick Pocket": //Oriax
                     return GetOriaxPickPocketText();
                 case "Whirling Axes": //Sutha
                     return GetSuthaWhirlingAxesText();
@@ -641,7 +641,7 @@ namespace DungeonMayhem.Library
                 LogMessage($"\t{attacker.CreatureName} attacks {attackedCreature.CreatureName}");
                 if (attackedCreature.CurrentHitPoints <= 0)
                 {
-                    LogLine($" - {attackedCreature.CreatureName} has been defeated, and can no longer be attacked.");
+                    //LogLine($" - {attackedCreature.CreatureName} has been defeated, and can no longer be attacked.");
                     break;
                 }
 
@@ -856,8 +856,7 @@ namespace DungeonMayhem.Library
 
                         if (creature == c && c.CurrentHitPoints <= 0)
                         {
-                            LogLine("Ha ha ha, you just killed yourself!");
-                            return;
+                            LogLine("\tHa ha ha, you just killed yourself!");
                         }
                     }
                 }
