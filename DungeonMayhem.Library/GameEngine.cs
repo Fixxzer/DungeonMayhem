@@ -95,9 +95,12 @@ namespace DungeonMayhem.Library
                         {
                             DrawCard(creature);
                         }
-                        
+
                         // Play a card
+                        LogLine();
+                        LogLine("--------------------- START TURN --------------------------");
                         PlayCard(creature);
+                        LogLine("--------------------- END TURN --------------------------");
                     }
                     else
                     {
