@@ -21,7 +21,7 @@ namespace DungeonMayhem.Library
         public ShapeshiftForm ShapeShiftForm { get; set; }
         public int PlayerNumber { get; set; }
 
-        public Creature(int creatureId, string name, string jsonFile)
+        public Creature(int creatureId, string name, string jsonFile, bool isHuman = false)
         {
             CreatureId = creatureId;
             CreatureName = name;
@@ -29,7 +29,7 @@ namespace DungeonMayhem.Library
             DiscardDeck = new Deck();
             DrawDeck = JsonSerializer.Deserialize<Deck>(File.ReadAllText($"Creatures\\{jsonFile}"));
             InHandDeck = new Deck();
-            IsHuman = false;
+            IsHuman = isHuman;
             MaxHitPoints = 10;
             NumberOfShields = 0;
             PlayerName = string.Empty;

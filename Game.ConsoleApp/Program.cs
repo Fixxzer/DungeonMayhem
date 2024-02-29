@@ -16,7 +16,7 @@ namespace Game.ConsoleApp
                 const int numGames = 100;
                 const bool useMightyPowers = true;
                 const bool writeToConsole = true;
-                const bool isInteractive = false;
+                const bool isInteractive = true;
 
                 Stopwatch sw1 = new Stopwatch();
                 Stopwatch sw2 = new Stopwatch();
