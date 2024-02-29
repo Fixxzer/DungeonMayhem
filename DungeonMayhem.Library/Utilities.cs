@@ -27,5 +27,5 @@ namespace DungeonMayhem.Library
                 list.Add(item);
             }
         }
-    }
+	}
 }
