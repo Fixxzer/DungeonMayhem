@@ -36,9 +36,7 @@ namespace DungeonMayhem.Library
 						sb.Append("[Heal]");
 						break;
 					case ActionType.MightyPower:
-						sb.Append("[Mighty Power - ");
-						sb.Append(Abilities.LookupMightyPowerText(Name));
-						sb.Append(']');
+						sb.Append($"[Mighty Power - {Abilities.LookupMightyPowerText(Name)}]");
 						break;
 					case ActionType.Shapeshift:
 						sb.Append("[Shapeshift]");

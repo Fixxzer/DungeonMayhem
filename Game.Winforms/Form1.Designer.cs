@@ -200,6 +200,7 @@
 			textBoxMessages.Margin = new Padding(3, 2, 3, 2);
 			textBoxMessages.Multiline = true;
 			textBoxMessages.Name = "textBoxMessages";
+			textBoxMessages.ScrollBars = ScrollBars.Horizontal;
 			textBoxMessages.Size = new Size(603, 177);
 			textBoxMessages.TabIndex = 12;
 			// 

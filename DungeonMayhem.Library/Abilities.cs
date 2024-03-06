@@ -81,178 +81,178 @@ namespace DungeonMayhem.Library
 				case "Mighty Toss": //Sutha
 					return GetSuthaMightyTossText();
 				default:
-					return "\tMighty Power Not Found!";
+					return "Mighty Power Not Found!";
 			}
 		}
 
 		public static string GetAzzanVampiricTouchText()
 		{
-			return "\tSwap your hit points with an opponent's.";
+			return "Swap your hit points with an opponent's.";
 		}
 
 		public static string GetAzzanFireballText()
 		{
-			return "\tEach player (including you) takes 3 damage!";
+			return "Each player (including you) takes 3 damage!";
 		}
 
 		public static string GetAzzanCharmText()
 		{
-			return "\tTake the shields that an opponent has in play - it protects you now!";
+			return "Take the shields that an opponent has in play - it protects you now!";
 		}
 
 		public static string GetBlorpHugsText()
 		{
-			return "\tDestroy a creature's shields and then heal for each shield destroyed.";
+			return "Destroy a creature's shields and then heal for each shield destroyed.";
 		}
 
 		public static string GetBlorpBurpedUpBonesText()
 		{
-			return "\tAttack twice and gain 3 shields.";
+			return "Attack twice and gain 3 shields.";
 		}
 
 		public static string GetBlorpHereIComeText()
 		{
-			return "\tThis turn, your attack cards ignore shield cards.  Gain 3 attacks.";
+			return "This turn, your attack cards ignore shield cards.  Gain 3 attacks.";
 		}
 
 		public static string GetDelilahPraiseMeText()
 		{
-			return "\tDraw 3 cards, then, each opponent can choose to praise your greatness.  Double attack those who do not (not-implemented).";
+			return "Draw 3 cards, then, each opponent can choose to praise your greatness.  Double attack those who do not (not-implemented).";
 		}
 
 		public static string GetDelilahDeathRayText()
 		{
-			return "\tDouble attack each opponent with no shield cards in play.  Then destroy all shield cards - including yours!";
+			return "Double attack each opponent with no shield cards in play.  Then destroy all shield cards - including yours!";
 		}
 
 		public static string GetDelilahCharmRayText()
 		{
-			return "\tUntil your next turn, choose the target of all attack cards.";
+			return "Until your next turn, choose the target of all attack cards.";
 		}
 
 		public static string GetDrTMindBlastText()
 		{
-			return "\tAttack an opponent once for each card they have in their hand.";
+			return "Attack an opponent once for each card they have in their hand.";
 		}
 
 		public static string GetDrTMindGamesText()
 		{
-			return "\tSwap your hand with an opponent's hand.";
+			return "Swap your hand with an opponent's hand.";
 		}
 
 		public static string GetDrTTellMeAboutYourMotherText()
 		{
-			return "\tAdd the top card of each opponent's discard pile to your hand.";
+			return "Add the top card of each opponent's discard pile to your hand.";
 		}
 
 		public static string GetHootsForMyNextTrickText()
 		{
-			return "\tUntil your next turn, your attacks hit all opponents.";
+			return "Until your next turn, your attacks hit all opponents.";
 		}
 
 		public static string GetHootsToTheFaceText()
 		{
-			return "\tDestroy a shield card and then attack for each starting shield on that card.";
+			return "Destroy a shield card and then attack for each starting shield on that card.";
 		}
 
 		public static string GetHootsOwlbearBoogieText()
 		{
-			return $"\tEach player does a little dance and draws a card.  You then draw a card for each player who danced.";
+			return $"Each player does a little dance and draws a card.  You then draw a card for each player who danced.";
 		}
 
 		public static string GetJaheiraPrimalStrikeText()
 		{
-			return "\tYou make an animal noise and attack each opponent.";
+			return "You make an animal noise and attack each opponent.";
 		}
 
 		public static string GetJaheiraCommuneWithNatureText()
 		{
-			return "\tYou may play a Form card for free.";
+			return "You may play a Form card for free.";
 		}
 
 		public static string GetLiaDivineInspirationText()
 		{
-			return "\tChoose any card in your discard pile and put it into your hand, then heal twice";
+			return "Choose any card in your discard pile and put it into your hand, then heal twice";
 		}
 
 		public static string GetLiaBanishingSmiteText()
 		{
-			return "\tDestroy all shield cards in play (including yours), then go again.";
+			return "Destroy all shield cards in play (including yours), then go again.";
 		}
 
 		public static string GetLordCinderpuffLiquidateAssetsText()
 		{
-			return "\tDiscard your hand and attack equal to the number of cards discarded.";
+			return "Discard your hand and attack equal to the number of cards discarded.";
 		}
 
 		public static string GetLordCinderpuffHostileTakeoverText()
 		{
-			return "\tAttack all opponents, double attack one opponent, then attack a different opponent.";
+			return "Attack all opponents, double attack one opponent, then attack a different opponent.";
 		}
 
 		public static string GetLordCinderpuffMurdersAndAcquisitionsText()
 		{
-			return "\tEach player must attack, heal, or draw.  Start with you and go right.  You repeat all choices.";
+			return "Each player must attack, heal, or draw.  Start with you and go right.  You repeat all choices.";
 		}
 
 		public static string GetMimiABookCannotBiteText()
 		{
-			return "\tUse the top-listed Mighty Power of the player to your left or right";
+			return "Use the top-listed Mighty Power of the player to your left or right";
 		}
 
 		public static string GetMimiItsNotATrapText()
 		{
-			return "\tMake one player's hit points equal to another player's hit points";
+			return "Make one player's hit points equal to another player's hit points";
 		}
 
 		public static string GetMimiDefinitelyJustAMirrorText()
 		{
-			return "\tPlay this card as a copy of any other shield card in play";
+			return "Play this card as a copy of any other shield card in play";
 		}
 
 		public static string GetMinscAndBooSwapportunityText()
 		{
-			return "\tEach player gives their hit point total to the player on their right";
+			return "Each player gives their hit point total to the player on their right";
 		}
 
 		public static string GetMinscAndBooScoutingOutingText()
 		{
-			return "\tDraw a card from the top of each opponent's deck";
+			return "Draw a card from the top of each opponent's deck";
 		}
 
 		public static string GetMinscAndBooFavoredFrienemiesText()
 		{
-			return "\tYour attack cards deal one bonus damage this turn";
+			return "Your attack cards deal one bonus damage this turn";
 		}
 
 		public static string GetOriaxCleverDisguiseText()
 		{
-			return "\tNone of your opponents' cards affect you or your shield cards until your next turn.";
+			return "None of your opponents' cards affect you or your shield cards until your next turn.";
 		}
 
 		public static string GetOriaxSneakAttackText()
 		{
-			return "\tDestroy one shield card in play, then play again.";
+			return "Destroy one shield card in play, then play again.";
 		}
 
 		public static string GetOriaxPickPocketText()
 		{
-			return "\tSteal the top card of any player's deck and play it.";
+			return "Steal the top card of any player's deck and play it.";
 		}
 
 		public static string GetSuthaWhirlingAxesText()
 		{
-			return "\tYou heal once per opponent, then attack each opponent.";
+			return "You heal once per opponent, then attack each opponent.";
 		}
 
 		public static string GetSuthaBattleRoarText()
 		{
-			return "\tEach player (including you) discards their hand, then draws three cards.  Then play again.";
+			return "Each player (including you) discards their hand, then draws three cards.  Then play again.";
 		}
 
 		public static string GetSuthaMightyTossText()
 		{
-			return "\tDestroy one shield card in play, then draw a card.";
+			return "Destroy one shield card in play, then draw a card.";
 		}
 	}
 }

@@ -15,9 +15,11 @@ namespace Game.Winforms
 		private bool _isFirstTurn;
 		private bool _specialUntargetable = false;
 		private Creature _untargetableCreature;
+		private bool _isGameOver = false;
 
 		private Creature _currentCreature;
 		private Card _currentCard;
+		private int _round;
 
 		public Form1()
 		{
@@ -56,10 +58,9 @@ namespace Game.Winforms
 			}
 		}
 
-		private void StartGame()
+		public void StartGame()
 		{
 			_creatures.Shuffle();
-			DisplayCharacterStatus();
 
 			// Shuffle Draw deck
 			foreach (var creature in _creatures)
@@ -67,32 +68,45 @@ namespace Game.Winforms
 				creature.DrawDeck.CardDeck.Shuffle();
 			}
 
-			var round = 1;
-			labelRoundCounter.Text = $"Round {round}";
+			_round = 0;
 
-			//while (true)
+			IncrementRound();
+		}
+
+		private void IncrementRound()
+		{
+			DisplayCharacterStatus();
+
+			_round++;
+			labelRoundCounter.Text = $"Round {_round}";
+
+			if (_currentCreature == null || _creatures.IndexOf(_currentCreature) == _creatures.Count - 1)
 			{
-				foreach (var creature in _creatures)
-				{
-					if (creature.CurrentHitPoints > 0)
-					{
-						labelPlayersTurnName.Text = $"It's {creature.CreatureName}'s turn";
+				_currentCreature = _creatures.First();
+			}
+			else
+			{
+				_currentCreature = _creatures[_creatures.IndexOf(_currentCreature) + 1];
+			}
 
-						DrawCards(creature, round);
+			PlayTurn();
+		}
 
-						// Play a card
-						SelectCard(creature);
-					}
-					else
-					{
-						// This is needed to toggle off the special abilities of the defeated players
-						SelectCard(creature);
-					}
+		private void PlayTurn()
+		{
+			if (_currentCreature.CurrentHitPoints > 0)
+			{
+				labelPlayersTurnName.Text = $"It's {_currentCreature.CreatureName}'s turn";
 
+				DrawCards();
 
-				}
-
-				round++;
+				// We need to end the call on this, because it waits for the UI.  Note - also plays card for non-human players.
+				SelectCard();
+			}
+			else
+			{
+				// This is needed to toggle off the special abilities of the defeated players
+				SelectCard();
 			}
 		}
 
@@ -131,20 +145,22 @@ namespace Game.Winforms
 
 			LogLine(sb.ToString());
 
+			_isGameOver = true;
+
 			return winnerList;
 		}
 
-		private List<Creature> Winner(Creature creature)
+		private List<Creature> Winner(Creature winner)
 		{
-			List<Creature> winnerList = new List<Creature> { creature };
+			List<Creature> winnerList = new List<Creature> { winner };
 
 			StringBuilder sb = new StringBuilder();
 			sb.AppendLine();
 			sb.AppendLine("********************************************************************************************************************");
-			sb.AppendLine($"Congratulations {creature.CreatureName}, you are the winner, with {creature.CurrentHitPoints} hit points and {creature.NumberOfShields} shield(s) remaining!");
+			sb.AppendLine($"Congratulations {winner.CreatureName}, you are the winner, with {winner.CurrentHitPoints} hit points and {winner.NumberOfShields} shield(s) remaining!");
 			sb.AppendLine();
 			sb.AppendLine("The following places:");
-			sb.AppendLine($"{1} - {creature.CreatureName}");
+			sb.AppendLine($"{1} - {winner.CreatureName}");
 			int count = 2;
 			foreach (var loser in _defeated)
 			{
@@ -156,57 +172,45 @@ namespace Game.Winforms
 
 			LogLine(sb.ToString());
 
+			_isGameOver = true;
+
 			return winnerList;
 		}
 
-		private void DrawCards(Creature creature, int round)
+		private void DrawCards()
 		{
 			// Draw a card, 3 cards for round 1, only 1 card for every round after
-			for (int i = 0; i < (round == 1 ? 3 : 1); i++)
+			for (int i = 0; i < (_round == 1 ? 3 : 1); i++)
 			{
-				var card = creature.AddCardFromDrawDeckToInHandDeck();
+				var card = _currentCreature.AddCardFromDrawDeckToInHandDeck();
 				if (card == null)
 					return;
-
-				creature.InHandDeck.CardDeck.Add(card);
 			}
 		}
 
-		private void SelectCard(Creature creature, Card specificCard = null)
+		private void SelectCard()
 		{
-			if (creature.CurrentHitPoints > 0)
+			if (_currentCreature.IsHuman)
 			{
-				labelPlayersTurnName.Text = creature.CreatureName;
-				_currentCreature = creature;
-				_currentCard = specificCard;
+				DisplayHand();
 
-				DisplayHand(creature);
+				LogLine("Please select a card to play, select the line and press the play card button");
+			}
+			else
+			{
+				_currentCard = RetrieveCardFromHand();
+				PlayCard(_currentCard);
 
-				if (specificCard != null)
-				{
-					LogLine($"You must play {specificCard}");
-					//LogLine("Press any key to continue...");
-					//Console.ReadKey();
-					listBoxHand.Items.Clear();
-					listBoxHand.Items.Add(specificCard);
-				}
-				else
-				{
-					LogLine("Please select a card to play, select the line and press the play card button");
-				}
-
-				if (!creature.IsHuman)
-				{
-					PlayCard(creature, specificCard);
-				}
+				// Play next round
+				IncrementRound();
 			}
 		}
 
-		private void DisplayHand(Creature creature)
+		private void DisplayHand()
 		{
 			listBoxHand.Items.Clear();
 			//int optionNum = 1;
-			foreach (var handCard in creature.InHandDeck.CardDeck)
+			foreach (var handCard in _currentCreature.InHandDeck.CardDeck)
 			{
 				//LogLine($"{optionNum++} - {handCard}");
 				listBoxHand.Items.Add(handCard);
@@ -215,9 +219,6 @@ namespace Game.Winforms
 
 		private void buttonPlayCard_Click(object sender, EventArgs e)
 		{
-			var creature = _currentCreature;
-			var specificCard = _currentCard;
-
 			//int? selectedNum = null;
 			//while (selectedNum == null)
 			if (listBoxHand.SelectedItem == null)
@@ -227,67 +228,74 @@ namespace Game.Winforms
 				return;
 			}
 
-			specificCard = (Card)listBoxHand.SelectedItem;
+			_currentCard = (Card)listBoxHand.SelectedItem;
 
-			PlayCard(creature, specificCard);
+			PlayCard(_currentCard);
+
+			// Play next round
+			IncrementRound();
+
+
 			//string option = Console.ReadLine();
 			//selectedNum = int.Parse(option);
 
-			//if (selectedNum <= 0 || selectedNum > creature.InHandDeck.CardDeck.Count)
+			//if (selectedNum <= 0 || selectedNum > _currentCreature.InHandDeck.CardDeck.Count)
 			//{
 			//    LogLine();
 			//    LogLine("Invalid selection, please try again.");
 			//    selectedNum = null;
 			//}
 
-			//var selectedCard = creature.InHandDeck.CardDeck[selectedNum.Value - 1];
+			//var selectedCard = _currentCreature.InHandDeck.CardDeck[selectedNum.Value - 1];
 			//specificCard = selectedCard;
+
+			//PlayTurn(NextCreature());
 		}
 
-		private void PlayCard(Creature creature, Card specificCard = null)
+		private void PlayCard(Card specificCard = null)
 		{
-			if (_specialAttackAllOverride && _currentTurn != creature)
+			if (_specialAttackAllOverride && _currentTurn != _currentCreature)
 			{
 				_specialAttackAllOverride = false;
 			}
 
-			if (_specialAttackBonusDamageOverride && _currentTurn != creature)
+			if (_specialAttackBonusDamageOverride && _currentTurn != _currentCreature)
 			{
 				_specialAttackBonusDamageOverride = false;
 			}
 
-			if (_specialAttackSpecificOverride != null && _currentTurn != creature)
+			if (_specialAttackSpecificOverride != null && _currentTurn != _currentCreature)
 			{
 				_isFirstTurn = false;
 			}
 
-			if (!_isFirstTurn && _specialAttackSpecificOverride != null && _currentTurn == creature)
+			if (!_isFirstTurn && _specialAttackSpecificOverride != null && _currentTurn == _currentCreature)
 			{
 				_specialAttackSpecificOverride = null;
 			}
 
-			if (_specialUntargetable && _untargetableCreature == creature)
+			if (_specialUntargetable && _untargetableCreature == _currentCreature)
 			{
 				_specialUntargetable = false;
 				_untargetableCreature = null;
 			}
 
 			// This is needed to let the special attacks reset
-			if (creature.CurrentHitPoints <= 0)
+			if (_currentCreature.CurrentHitPoints <= 0)
 			{
 				return;
 			}
 
-			var card = specificCard ?? RetrieveCardFromHand(creature);
-			creature.InHandDeck.CardDeck.Remove(card);
-			creature.InPlayDeck.CardDeck.Add(card);
+			var card = specificCard ?? RetrieveCardFromHand();
+			_currentCreature.InHandDeck.CardDeck.Remove(card);
+			_currentCreature.InPlayDeck.CardDeck.Add(card);
 
 			LogLine();
-			LogLine($"{creature.CreatureName} plays '{card.Name}'");
+			LogLine($"{_currentCreature.CreatureName} plays '{card.Name}'");
 
 			if (card.Name.Contains("Shapeshift:"))
 			{
-				PlayShapeshift(creature, card);
+				PlayShapeshift(card);
 			}
 
 			foreach (var action in card.Actions)
@@ -297,41 +305,41 @@ namespace Game.Winforms
 				{
 					case ActionType.Draw:
 						LogLine("*Draw a card");
-						DrawCard(creature);
+						DrawCard();
 						break;
 					case ActionType.Block:
 						LogLine("*Add 1 shield");
-						PlayShieldCard(creature, card);
+						PlayShieldCard(card);
 						break;
 					case ActionType.Damage:
 						LogLine("*Deal 1 damage");
-						Attack(creature, AttackType.Random);
+						Attack(AttackType.Random);
 						break;
 					case ActionType.Heal:
 						LogLine("*Recover 1 hit point");
-						Heal(creature);
+						Heal();
 						break;
 					case ActionType.PlayExtraCard:
 						LogLine("*Play an extra card");
-						SelectCard(creature);
+						SelectCard();
 						break;
 					case ActionType.MightyPower:
 						LogMessage("*Mighty Power! ");
-						MightyPower(creature, card);
+						MightyPower(card);
 						break;
 					case ActionType.DamageIgnoreShields:
-						Attack(creature, AttackType.Random, null, true);
+						Attack(AttackType.Random, null, true);
 						break;
 					case ActionType.Shapeshift:
-						switch (creature.ShapeShiftForm)
+						switch (_currentCreature.ShapeShiftForm)
 						{
 							case ShapeshiftForm.Bear:
 								LogLine("*Bear Form: Heal");
-								Heal(creature);
+								Heal();
 								break;
 							case ShapeshiftForm.Wolf:
 								LogLine("*Wolf Form: Attack");
-								Attack(creature, AttackType.Random);
+								Attack(AttackType.Random);
 								break;
 							case ShapeshiftForm.None:
 								LogLine("*No Shapeshift Form");
@@ -347,27 +355,27 @@ namespace Game.Winforms
 
 			if (card.Actions.All(x => x.ActionType != ActionType.Block))
 			{
-				creature.RemoveCardFromInPlayDeck(card);
-				creature.MoveCardToDiscardDeck(card);
+				_currentCreature.RemoveCardFromInPlayDeck(card);
+				_currentCreature.MoveCardToDiscardDeck(card);
 			}
 
 			if (card.Actions.Any(x => x.ActionType == ActionType.Block))
 			{
 				LogLine();
-				LogLine($"\t{creature.CreatureName} now has {creature.NumberOfShields} shield(s)");
+				LogLine($"\t{_currentCreature.CreatureName} now has {_currentCreature.NumberOfShields} shield(s)");
 			}
 
 			if (card.Actions.Any(x => x.ActionType == ActionType.Heal))
 			{
 				LogLine();
-				LogLine($"\t{creature.CreatureName} now has {creature.CurrentHitPoints} hit point(s)");
+				LogLine($"\t{_currentCreature.CreatureName} now has {_currentCreature.CurrentHitPoints} hit point(s)");
 			}
 
 			// Check in-hand, if 0 - draw 2
-			if (!creature.InHandDeck.CardDeck.Any())
+			if (!_currentCreature.InHandDeck.CardDeck.Any())
 			{
-				DrawCard(creature);
-				DrawCard(creature);
+				DrawCard();
+				DrawCard();
 			}
 
 			// Evaluate Game End scenario
@@ -385,36 +393,36 @@ namespace Game.Winforms
 			DisplayCharacterStatus();
 		}
 
-		private Card RetrieveCardFromHand(Creature creature)
+		private Card RetrieveCardFromHand()
 		{
 			// If out of cards, draw twice
-			if (creature.InHandDeck.CardDeck.Count <= 0)
+			if (_currentCreature.InHandDeck.CardDeck.Count <= 0)
 			{
-				DrawCard(creature);
-				DrawCard(creature);
+				DrawCard();
+				DrawCard();
 			}
 
 			// Prioritize play again cards
-			var playAgainCard = GetCardWithMostActionItems(creature, ActionType.PlayExtraCard);
+			var playAgainCard = GetCardWithMostActionItems(ActionType.PlayExtraCard);
 			if (playAgainCard != null)
 			{
-				creature.InHandDeck.CardDeck.Remove(playAgainCard);
+				_currentCreature.InHandDeck.CardDeck.Remove(playAgainCard);
 				return playAgainCard;
 			}
 
 			// If health is low, prioritize healing or shields
-			if (creature.CurrentHitPoints <= 5)
+			if (_currentCreature.CurrentHitPoints <= 5)
 			{
 				int shieldCount = 0;
 				int healingCount = 0;
 
-				var shieldCard = GetCardWithMostActionItems(creature, ActionType.Block);
+				var shieldCard = GetCardWithMostActionItems(ActionType.Block);
 				if (shieldCard != null)
 				{
 					shieldCount = shieldCard.Actions.Count(x => x.ActionType == ActionType.Block);
 				}
 
-				var healthCard = GetCardWithMostActionItems(creature, ActionType.Heal);
+				var healthCard = GetCardWithMostActionItems(ActionType.Heal);
 				if (healthCard != null)
 				{
 					healingCount = healthCard.Actions.Count(x => x.ActionType == ActionType.Heal);
@@ -424,37 +432,37 @@ namespace Game.Winforms
 				{
 					if (healingCount >= shieldCount)
 					{
-						creature.InHandDeck.CardDeck.Remove(healthCard);
+						_currentCreature.InHandDeck.CardDeck.Remove(healthCard);
 						return healthCard;
 					}
 
-					creature.InHandDeck.CardDeck.Remove(shieldCard);
+					_currentCreature.InHandDeck.CardDeck.Remove(shieldCard);
 					return shieldCard;
 				}
 			}
 
 			// Check again if out of cards, draw twice
-			if (creature.InHandDeck.CardDeck.Count <= 0)
+			if (_currentCreature.InHandDeck.CardDeck.Count <= 0)
 			{
-				DrawCard(creature);
-				DrawCard(creature);
+				DrawCard();
+				DrawCard();
 			}
 
 			// Otherwise randomize
-			creature.InHandDeck.CardDeck.Shuffle();
-			var card = creature.InHandDeck.CardDeck.FirstOrDefault();
+			_currentCreature.InHandDeck.CardDeck.Shuffle();
+			var card = _currentCreature.InHandDeck.CardDeck.FirstOrDefault();
 			if (card == null)
 			{
-				Console.WriteLine();
+				Console.WriteLine("Error getting cards!");
 			}
 
 			return card;
 		}
 
-		private static Card GetCardWithMostActionItems(Creature creature, ActionType actionType)
+		private Card GetCardWithMostActionItems(ActionType actionType)
 		{
 			List<Card> cards = new List<Card>();
-			foreach (var card in creature.InHandDeck.CardDeck)
+			foreach (var card in _currentCreature.InHandDeck.CardDeck)
 			{
 				foreach (var action in card.Actions)
 				{
@@ -482,20 +490,22 @@ namespace Game.Winforms
 
 
 
-		private static void PlayShapeshift(Creature creature, Card card)
+		private void PlayShapeshift(Card card)
 		{
 			if (card.Name.Contains("Bear"))
 			{
-				creature.ShapeShiftForm = ShapeshiftForm.Bear;
+				_currentCreature.ShapeShiftForm = ShapeshiftForm.Bear;
 			}
 			else if (card.Name.Contains("Wolf"))
 			{
-				creature.ShapeShiftForm = ShapeshiftForm.Wolf;
+				_currentCreature.ShapeShiftForm = ShapeshiftForm.Wolf;
 			}
 		}
 
-		public void Attack(Creature attacker, AttackType attackType, Creature target = null, bool bypassShields = false, bool isMightyPower = false)
+		public void Attack(AttackType attackType, Creature target = null, bool bypassShields = false, bool isMightyPower = false, Creature specificCreature = null)
 		{
+			specificCreature ??= _currentCreature;
+
 			var attackTargets = new List<Creature>();
 
 			if (_specialAttackAllOverride && !isMightyPower)
@@ -512,19 +522,19 @@ namespace Game.Winforms
 			switch (attackType)
 			{
 				case AttackType.Random:
-					var attackList = GetOpponents(attacker).ToList();
+					var attackList = GetOpponents().ToList();
 					if (!attackList.Any())
 					{
 						break;
 					}
 
-					if (attacker.IsHuman)
+					if (specificCreature.IsHuman)
 					{
 						DisplayCreatureList(attackList);
 
 						while (listBoxCharacterName.SelectedItem == null)
 						{
-							LogLine($"{attacker.CreatureName} who would you like to attack? Please select a character from the character list");
+							LogLine($"{specificCreature.CreatureName} who would you like to attack? Please select a character from the character list");
 							Thread.Sleep(1000);
 						}
 
@@ -559,7 +569,7 @@ namespace Game.Winforms
 					attackTargets.Add(target);
 					break;
 				case AttackType.Opponents:
-					attackTargets.AddRange(GetOpponents(attacker));
+					attackTargets.AddRange(GetOpponents());
 					break;
 				default:
 					throw new ArgumentOutOfRangeException(nameof(attackType), attackType, null);
@@ -572,10 +582,10 @@ namespace Game.Winforms
 
 			foreach (var attackedCreature in attackTargets.OrderBy(x => x.CreatureName))
 			{
-				LogMessage($"\t{attacker.CreatureName} attacks {attackedCreature.CreatureName}");
+				LogMessage($"\t{specificCreature.CreatureName} attacks {attackedCreature.CreatureName}");
 				if (attackedCreature.CurrentHitPoints <= 0)
 				{
-					//LogLine($" - {attackedCreature.CreatureName} has been defeated, and can no longer be attacked.");
+					//LogLine($" - {attacked_currentCreature.CreatureName} has been defeated, and can no longer be attacked.");
 					break;
 				}
 
@@ -603,38 +613,41 @@ namespace Game.Winforms
 				if (attackedCreature.CurrentHitPoints <= 0)
 				{
 					LogLine();
-					LogLine($"===== {attackedCreature.CreatureName} has been defeated by {attacker.CreatureName}! ======");
+					LogLine($"===== {attackedCreature.CreatureName} has been defeated by {specificCreature.CreatureName}! ======");
 
 					_defeated.Push(attackedCreature);
 				}
 			}
 		}
 
-		public void Heal(Creature creature)
+		public void Heal(Creature specificCreature = null)
 		{
-			creature.Heal();
+			specificCreature ??= _currentCreature;
+			specificCreature.Heal();
 		}
 
-		public void DrawCard(Creature creature)
+		public void DrawCard(Creature specificCreature = null)
 		{
-			var card = creature.AddCardFromDrawDeckToInHandDeck();
+			specificCreature ??= _currentCreature;
+
+			var card = specificCreature.AddCardFromDrawDeckToInHandDeck();
 			if (card == null)
 			{
 				LogLine("**** There are no draw cards or discard cards to draw from. ****");
 				return;
 			}
 
-			LogLine($"\t{creature.CreatureName} draws {card.Name}.");
+			LogLine($"\t{specificCreature.CreatureName} draws {card.Name}.");
 		}
 
-		public void PlayShieldCard(Creature creature, Card card)
+		public void PlayShieldCard(Card card)
 		{
-			creature.PlayShieldCard(card);
+			_currentCreature.PlayShieldCard(card);
 		}
 
 		#region MightyPowers
 
-		private void MightyPower(Creature creature, Card card)
+		private void MightyPower(Card card)
 		{
 			if (!_useMightyPowers)
 			{
@@ -644,16 +657,16 @@ namespace Game.Winforms
 			switch (card.Name)
 			{
 				case "Vampiric Touch": //Azzan
-					AzzanVampiricTouch(creature);
+					AzzanVampiricTouch();
 					break;
 				case "Fireball": //Azzan
-					AzzanFireball(creature);
+					AzzanFireball();
 					break;
 				case "Charm": //Azzan
-					AzzanCharm(creature);
+					AzzanCharm();
 					break;
 				case "Hugs!": //Blorp
-					BlorpHugs(creature);
+					BlorpHugs();
 					break;
 				case "Burped-Up Bones": //Blorp
 					BlorpBurpedUpBones();
@@ -665,85 +678,85 @@ namespace Game.Winforms
 					DelilahPraiseMe();
 					break;
 				case "Death Ray": //Delilah
-					DelilahDeathRay(creature);
+					DelilahDeathRay();
 					break;
 				case "Charm Ray": //Delilah
-					DelilahCharmRay(creature);
+					DelilahCharmRay();
 					break;
 				case "Mind Blast": //Dr. T
-					DrTMindBlast(creature);
+					DrTMindBlast();
 					break;
 				case "Mind Games": //Dr. T
-					DrTMindGames(creature);
+					DrTMindGames();
 					break;
 				case "Tell Me About Your Mother": // Dr. T
-					DrTTellMeAboutYourMother(creature);
+					DrTTellMeAboutYourMother();
 					break;
 				case "For My Next Trick...": //Hoots
-					HootsForMyNextTrick(creature);
+					HootsForMyNextTrick();
 					break;
 				case "To The Face!": //Hoots
-					HootsToTheFace(creature);
+					HootsToTheFace();
 					break;
 				case "Owlbear Boogie": //Hoots
-					HootsOwlbearBoogie(creature);
+					HootsOwlbearBoogie();
 					break;
 				case "Primal Strike": //Jaheira
-					JaheiraPrimalStrike(creature);
+					JaheiraPrimalStrike();
 					break;
 				case "Commune With Nature": //Jaheira
-					JaheiraCommuneWithNature(creature);
+					JaheiraCommuneWithNature();
 					break;
 				case "Divine Inspiration": //Lia
-					LiaDivineInspiration(creature);
+					LiaDivineInspiration();
 					break;
 				case "Banishing Smite": //Lia
 					LiaBanishingSmite();
 					break;
 				case "Liquidate Assets": //Lord C
-					LordCinderpuffLiquidateAssets(creature);
+					LordCinderpuffLiquidateAssets();
 					break;
 				case "Hostile Takeover": //Lord C
-					LordCinderpuffHostileTakeover(creature);
+					LordCinderpuffHostileTakeover();
 					break;
 				case "Murders and Acquisitions": //Lord C
-					LordCinderpuffMurdersAndAcquisitions(creature);
+					LordCinderpuffMurdersAndAcquisitions();
 					break;
 				case "A Book (Cannot Bite)": //Mimi
-					MimiABookCannotBite(creature);
+					MimiABookCannotBite();
 					break;
 				case "It's Not a Trap": //Mimi
-					MimiItsNotATrap(creature);
+					MimiItsNotATrap();
 					break;
 				case "Definitely Just a Mirror": //Mimi
-					MimiDefinitelyJustAMirror(creature);
+					MimiDefinitelyJustAMirror();
 					break;
 				case "Swapportunity": //M&B
 					MinscAndBooSwapportunity();
 					break;
 				case "Scouting Outing": //M&B
-					MinscAndBooScoutingOuting(creature);
+					MinscAndBooScoutingOuting();
 					break;
 				case "Favored Frienemies": //M&B
-					MinscAndBooFavoredFrienemies(creature);
+					MinscAndBooFavoredFrienemies();
 					break;
 				case "Clever Disguise": //Oriax
-					OriaxCleverDisguise(creature);
+					OriaxCleverDisguise();
 					break;
 				case "Sneak Attack!": //Oriax
-					OriaxSneakAttack(creature);
+					OriaxSneakAttack();
 					break;
 				case "Pick Pocket": //Oriax
-					OriaxPickPocket(creature);
+					OriaxPickPocket();
 					break;
 				case "Whirling Axes": //Sutha
-					SuthaWhirlingAxes(creature);
+					SuthaWhirlingAxes();
 					break;
 				case "Battle Roar": //Sutha
 					SuthaBattleRoar();
 					break;
 				case "Mighty Toss": //Sutha
-					SuthaMightyToss(creature);
+					SuthaMightyToss();
 					break;
 				default:
 					LogLine("\tMighty Power Not Found!");
@@ -751,11 +764,11 @@ namespace Game.Winforms
 			}
 		}
 
-		private void AzzanVampiricTouch(Creature creature)
+		private void AzzanVampiricTouch()
 		{
 			LogLine(Abilities.GetAzzanVampiricTouchText());
 
-			var ops = GetOpponents(creature);
+			var ops = GetOpponents();
 			var maxHpOps = ops.OrderByDescending(x => x.CurrentHitPoints).FirstOrDefault();
 			if (maxHpOps == null)
 			{
@@ -763,15 +776,15 @@ namespace Game.Winforms
 				return;
 			}
 
-			int tmp = creature.CurrentHitPoints;
-			creature.CurrentHitPoints = maxHpOps.CurrentHitPoints;
+			int tmp = _currentCreature.CurrentHitPoints;
+			_currentCreature.CurrentHitPoints = maxHpOps.CurrentHitPoints;
 			maxHpOps.CurrentHitPoints = tmp;
 
-			LogLine($"\t{creature.CreatureName} swapped hit points with {maxHpOps.CreatureName}");
-			LogLine($"\t{creature.CreatureName} has {creature.CurrentHitPoints} hit points, {maxHpOps.CreatureName} has {maxHpOps.CurrentHitPoints} hit points.");
+			LogLine($"\t{_currentCreature.CreatureName} swapped hit points with {maxHpOps.CreatureName}");
+			LogLine($"\t{_currentCreature.CreatureName} has {_currentCreature.CurrentHitPoints} hit points, {maxHpOps.CreatureName} has {maxHpOps.CurrentHitPoints} hit points.");
 		}
 
-		private void AzzanFireball(Creature creature)
+		private void AzzanFireball()
 		{
 			LogLine(Abilities.GetAzzanFireballText());
 
@@ -781,9 +794,9 @@ namespace Game.Winforms
 				{
 					if (c.CurrentHitPoints > 0)
 					{
-						Attack(creature, AttackType.Specific, c, false, true);
+						Attack(AttackType.Specific, c, false, true);
 
-						if (creature == c && c.CurrentHitPoints <= 0)
+						if (_currentCreature == c && c.CurrentHitPoints <= 0)
 						{
 							LogLine("\tHa ha ha, you just killed yourself!");
 						}
@@ -794,12 +807,12 @@ namespace Game.Winforms
 			}
 		}
 
-		private void AzzanCharm(Creature creature)
+		private void AzzanCharm()
 		{
 			LogLine(Abilities.GetAzzanCharmText());
 
 			// find the creature with the most shields
-			var ops1 = GetOpponents(creature).Where(x => x.NumberOfShields > 0);
+			var ops1 = GetOpponents().Where(x => x.NumberOfShields > 0);
 			var creatureWithMostShields = ops1.OrderByDescending(x => x.NumberOfShields).FirstOrDefault();
 			if (creatureWithMostShields == null)
 			{
@@ -814,18 +827,18 @@ namespace Game.Winforms
 				}
 				else
 				{
-					creature.NumberOfShields += shields;
+					_currentCreature.NumberOfShields += shields;
 					creatureWithMostShields.NumberOfShields -= shields;
 
-					creature.ShieldDeck.CardDeck.AddRange(creatureWithMostShields.ShieldDeck.CardDeck);
+					_currentCreature.ShieldDeck.CardDeck.AddRange(creatureWithMostShields.ShieldDeck.CardDeck);
 					creatureWithMostShields.ShieldDeck.CardDeck.Clear();
 
-					LogLine($"\t{creature.CreatureName} charms {shields} shield(s) from {creatureWithMostShields.CreatureName}");
+					LogLine($"\t{_currentCreature.CreatureName} charms {shields} shield(s) from {creatureWithMostShields.CreatureName}");
 				}
 			}
 		}
 
-		private void BlorpHugs(Creature creature)
+		private void BlorpHugs()
 		{
 			LogLine(Abilities.GetBlorpHugsText());
 
@@ -846,13 +859,13 @@ namespace Game.Winforms
 					creatureWithMostShields.NumberOfShields -= shields;
 					creatureWithMostShields.ShieldDeck.CardDeck.Clear();
 
-					creature.CurrentHitPoints += shields;
-					if (creature.CurrentHitPoints > creature.MaxHitPoints)
+					_currentCreature.CurrentHitPoints += shields;
+					if (_currentCreature.CurrentHitPoints > _currentCreature.MaxHitPoints)
 					{
-						creature.CurrentHitPoints = creature.MaxHitPoints;
+						_currentCreature.CurrentHitPoints = _currentCreature.MaxHitPoints;
 					}
 
-					LogLine($"\t{creature.CreatureName} destroys {shields} shield(s) from {creatureWithMostShields.CreatureName}, and now has {creature.CurrentHitPoints} hit points");
+					LogLine($"\t{_currentCreature.CreatureName} destroys {shields} shield(s) from {creatureWithMostShields.CreatureName}, and now has {_currentCreature.CurrentHitPoints} hit points");
 				}
 			}
 		}
@@ -878,17 +891,17 @@ namespace Game.Winforms
 			// Actions are on the card
 		}
 
-		private void DelilahDeathRay(Creature creature)
+		private void DelilahDeathRay()
 		{
 			LogLine(Abilities.GetDelilahDeathRayText());
 
-			var noShieldChars = _creatures.Where(x => x.NumberOfShields == 0 && x.CurrentHitPoints > 0 && x != creature).ToList();
+			var noShieldChars = _creatures.Where(x => x.NumberOfShields == 0 && x.CurrentHitPoints > 0 && x != _currentCreature).ToList();
 
 			foreach (var c in noShieldChars)
 			{
 				for (int i = 0; i < 2; i++)
 				{
-					Attack(creature, AttackType.Specific, c);
+					Attack(AttackType.Specific, c);
 				}
 			}
 
@@ -900,42 +913,42 @@ namespace Game.Winforms
 			}
 		}
 
-		private void DelilahCharmRay(Creature creature)
+		private void DelilahCharmRay()
 		{
 			LogLine(Abilities.GetDelilahCharmRayText());
 
-			var t = GetOpponents(creature).FirstOrDefault();
-			if (t == null)
+			var firstOpponent = GetOpponents().FirstOrDefault();
+			if (firstOpponent == null)
 			{
 				LogLine("\tNo opponents remaining");
 				return;
 			}
 
-			LogLine($"\t{t.CreatureName} will be the target of all attack cards until your next turn.");
-			_specialAttackSpecificOverride = t;
-			_currentTurn = creature;
-			_isFirstTurn = true;
+			LogLine($"\t{firstOpponent.CreatureName} will be the target of all attack cards until your next turn.");
+			_specialAttackSpecificOverride = firstOpponent;
+			_currentTurn = _currentCreature;
+			//_isFirstTurn = true;
 		}
 
-		private void DrTMindBlast(Creature creature)
+		private void DrTMindBlast()
 		{
 			LogLine(Abilities.GetDrTMindBlastText());
 
-			var chars = GetOpponents(creature).ToList();
+			var chars = GetOpponents().ToList();
 			foreach (var target in chars)
 			{
 				for (int i = 0; i < target.InHandDeck.CardDeck.Count; i++)
 				{
-					Attack(creature, AttackType.Specific, target);
+					Attack(AttackType.Specific, target);
 				}
 			}
 		}
 
-		private void DrTMindGames(Creature creature)
+		private void DrTMindGames()
 		{
 			LogLine(Abilities.GetDrTMindGamesText());
 
-			var targetList = GetOpponents(creature).ToList();
+			var targetList = GetOpponents().ToList();
 			targetList.Shuffle();
 			var t1 = targetList.FirstOrDefault();
 			if (t1 == null)
@@ -944,17 +957,15 @@ namespace Game.Winforms
 				return;
 			}
 
-			var tmpInHandDeck = creature.InHandDeck;
-			creature.InHandDeck = t1.InHandDeck;
-			t1.InHandDeck = tmpInHandDeck;
+			(_currentCreature.InHandDeck, t1.InHandDeck) = (t1.InHandDeck, _currentCreature.InHandDeck);
 			LogLine($"\tSwapping hands with {t1.CreatureName}");
 		}
 
-		private void DrTTellMeAboutYourMother(Creature creature)
+		private void DrTTellMeAboutYourMother()
 		{
 			LogLine(Abilities.GetDrTTellMeAboutYourMotherText());
 
-			foreach (var opponent in GetOpponents(creature))
+			foreach (var opponent in GetOpponents())
 			{
 				var lastOrDefault = opponent.DiscardDeck.CardDeck.LastOrDefault();
 
@@ -965,64 +976,64 @@ namespace Game.Winforms
 				else
 				{
 					opponent.DiscardDeck.CardDeck.Remove(lastOrDefault);
-					creature.InHandDeck.CardDeck.Add(lastOrDefault);
+					_currentCreature.InHandDeck.CardDeck.Add(lastOrDefault);
 					LogLine($"\tAdding {lastOrDefault.Name} from {opponent.CreatureName} to hand.");
 				}
 			}
 		}
 
-		private void HootsForMyNextTrick(Creature creature)
+		private void HootsForMyNextTrick()
 		{
 			LogLine(Abilities.GetHootsForMyNextTrickText());
 
 			_specialAttackAllOverride = true;
-			_currentTurn = creature;
+			_currentTurn = _currentCreature;
 		}
 
-		private void HootsToTheFace(Creature creature)
+		private void HootsToTheFace()
 		{
 			LogLine(Abilities.GetHootsToTheFaceText());
 
-			var (numOfShieldsOnCard, highestShieldCharacter) = DestroyShieldCardInPlay(creature);
+			var (numOfShieldsOnCard, highestShieldCharacter) = DestroyShieldCardInPlay();
 
 			// Attack for each starting shield
 			for (int i = 0; i < numOfShieldsOnCard; i++)
 			{
-				Attack(creature, AttackType.Specific, highestShieldCharacter);
+				Attack(AttackType.Specific, highestShieldCharacter);
 			}
 		}
 
-		private void HootsOwlbearBoogie(Creature creature)
+		private void HootsOwlbearBoogie()
 		{
 			LogLine(Abilities.GetHootsOwlbearBoogieText());
 
 			int count = 0;
-			foreach (var c in GetOpponents(creature))
+			foreach (var opponent in GetOpponents())
 			{
-				DrawCard(c);
+				DrawCard(opponent); //@todo: Revisit DrawCard to take a specific character
 				count++;
 			}
 
 			for (int i = 0; i < count; i++)
 			{
-				DrawCard(creature);
+				DrawCard();
 			}
 
 			LogLine($"\tYou draw {count} card(s).");
 		}
 
-		private void JaheiraPrimalStrike(Creature creature)
+		private void JaheiraPrimalStrike()
 		{
 			LogLine(Abilities.GetJaheiraPrimalStrikeText());
 
-			Attack(creature, AttackType.Opponents, null, false, true);
+			Attack(AttackType.Opponents, null, false, true);
 		}
 
-		private void JaheiraCommuneWithNature(Creature creature)
+		private void JaheiraCommuneWithNature()
 		{
 			LogLine(Abilities.GetJaheiraCommuneWithNatureText());
 
-			var shapeshiftCardInHand = creature.InHandDeck.CardDeck.FirstOrDefault(cardInHand => cardInHand.Name.StartsWith("Shapeshift"));
+			var shapeshiftCardInHand = _currentCreature.InHandDeck.CardDeck.FirstOrDefault(cardInHand => cardInHand.Name.StartsWith("Shapeshift"));
 
 			if (shapeshiftCardInHand == null)
 			{
@@ -1030,24 +1041,24 @@ namespace Game.Winforms
 			}
 			else
 			{
-				SelectCard(creature, shapeshiftCardInHand);
+				PlayCard(shapeshiftCardInHand);
 			}
 		}
 
-		private void LiaDivineInspiration(Creature creature)
+		private void LiaDivineInspiration()
 		{
 			LogLine(Abilities.GetLiaDivineInspirationText());
 
-			if (creature.DiscardDeck.CardDeck.Count == 0)
+			if (_currentCreature.DiscardDeck.CardDeck.Count == 0)
 			{
 				LogLine("\tNo cards in discard pile to choose from");
 				return;
 			}
 
-			int rand = new Random().Next(0, creature.DiscardDeck.CardDeck.Count);
-			var randomDiscard = creature.DiscardDeck.CardDeck[rand];
-			creature.InHandDeck.CardDeck.Add(randomDiscard);
-			creature.DiscardDeck.CardDeck.Remove(randomDiscard);
+			int rand = new Random().Next(0, _currentCreature.DiscardDeck.CardDeck.Count);
+			var randomDiscard = _currentCreature.DiscardDeck.CardDeck[rand];
+			_currentCreature.InHandDeck.CardDeck.Add(randomDiscard);
+			_currentCreature.DiscardDeck.CardDeck.Remove(randomDiscard);
 			LogLine($"\tMoving {randomDiscard.Name} to hand.");
 		}
 
@@ -1064,31 +1075,31 @@ namespace Game.Winforms
 			}
 		}
 
-		private void LordCinderpuffLiquidateAssets(Creature creature)
+		private void LordCinderpuffLiquidateAssets()
 		{
 			LogLine(Abilities.GetLordCinderpuffLiquidateAssetsText());
 
-			int numAttacks = creature.InHandDeck.CardDeck.Count;
+			int numAttacks = _currentCreature.InHandDeck.CardDeck.Count;
 			LogLine($"\tYou have {numAttacks} card(s) in your hand, and get to attack {numAttacks} time(s).");
-			creature.DiscardDeck.CardDeck.AddRange(creature.InHandDeck.CardDeck);
-			creature.InHandDeck.CardDeck.Clear();
+			_currentCreature.DiscardDeck.CardDeck.AddRange(_currentCreature.InHandDeck.CardDeck);
+			_currentCreature.InHandDeck.CardDeck.Clear();
 			for (int i = 0; i < numAttacks; i++)
 			{
-				Attack(creature, AttackType.Random);
+				Attack(AttackType.Random);
 			}
 		}
 
-		private void LordCinderpuffHostileTakeover(Creature creature)
+		private void LordCinderpuffHostileTakeover()
 		{
 			LogLine(Abilities.GetLordCinderpuffHostileTakeoverText());
 
 			// Attack all
 			LogLine();
 			LogLine("\tAttacking all opponents");
-			Attack(creature, AttackType.Opponents, null, false, true);
+			Attack(AttackType.Opponents, null, false, true);
 
 			// Attack one twice
-			var ops = GetOpponents(creature).ToList();
+			var ops = GetOpponents().ToList();
 			if (!ops.Any())
 			{
 				LogLine($"\tNo opponents remaining.");
@@ -1107,7 +1118,7 @@ namespace Game.Winforms
 					break;
 				}
 
-				Attack(creature, AttackType.Specific, t2);
+				Attack(AttackType.Specific, t2);
 			}
 
 			// Attack a different
@@ -1121,10 +1132,10 @@ namespace Game.Winforms
 			LogLine();
 			LogLine($"\tAttacking someone different, attacking {op.CreatureName}");
 
-			Attack(creature, AttackType.Specific, op);
+			Attack(AttackType.Specific, op);
 		}
 
-		private void LordCinderpuffMurdersAndAcquisitions(Creature creature)
+		private void LordCinderpuffMurdersAndAcquisitions()
 		{
 			LogLine(Abilities.GetLordCinderpuffMurdersAndAcquisitionsText());
 
@@ -1133,43 +1144,43 @@ namespace Game.Winforms
 			switch (r)
 			{
 				case 0: //attack
-					Attack(creature, AttackType.Random);
+					Attack(AttackType.Random);
 					break;
 				case 1: //heal
-					Heal(creature);
+					Heal();
 					break;
 				case 2: //draw
-					DrawCard(creature);
+					DrawCard();
 					break;
 			}
 
 			// Go through rest of opponents and repeat their choice
-			foreach (var opponent in GetOpponents(creature))
+			foreach (var opponent in GetOpponents())
 			{
 				r = new Random().Next(0, 3);
 				switch (r)
 				{
 					case 0: //attack
-						Attack(opponent, AttackType.Random);
-						Attack(creature, AttackType.Random);
+						Attack(AttackType.Random, opponent);
+						Attack(AttackType.Random);
 						break;
 					case 1: //heal
 						Heal(opponent);
-						Heal(creature);
+						Heal();
 						break;
 					case 2: //draw
 						DrawCard(opponent);
-						DrawCard(creature);
+						DrawCard();
 						break;
 				}
 			}
 		}
 
-		private void MimiABookCannotBite(Creature creature)
+		private void MimiABookCannotBite()
 		{
 			LogLine(Abilities.GetMimiABookCannotBiteText());
 
-			var indexOf = _creatures.IndexOf(creature);
+			var indexOf = _creatures.IndexOf(_currentCreature);
 			if (indexOf == 0)
 			{
 				indexOf = _creatures.Count;
@@ -1181,7 +1192,7 @@ namespace Game.Winforms
 			if (mightyPowerCard != null)
 			{
 				previousCreature.DrawDeck.CardDeck.Remove(mightyPowerCard);
-				SelectCard(creature, mightyPowerCard);
+				PlayCard(mightyPowerCard);
 				return;
 			}
 
@@ -1189,7 +1200,7 @@ namespace Game.Winforms
 			if (mightyPowerCard != null)
 			{
 				previousCreature.DiscardDeck.CardDeck.Remove(mightyPowerCard);
-				SelectCard(creature, mightyPowerCard);
+				PlayCard(mightyPowerCard);
 				return;
 			}
 
@@ -1197,16 +1208,16 @@ namespace Game.Winforms
 			if (mightyPowerCard != null)
 			{
 				previousCreature.InHandDeck.CardDeck.Remove(mightyPowerCard);
-				SelectCard(creature, mightyPowerCard);
+				PlayCard(mightyPowerCard);
 				return;
 			}
 		}
 
-		private void MimiItsNotATrap(Creature creature)
+		private void MimiItsNotATrap()
 		{
 			LogLine(Abilities.GetMimiItsNotATrapText());
 
-			var aliveCreatures = _creatures.Where(x => x.CurrentHitPoints > 0 && x != creature).OrderBy(x => x.CurrentHitPoints).ToList();
+			var aliveCreatures = _creatures.Where(x => x.CurrentHitPoints > 0 && x != _currentCreature).OrderBy(x => x.CurrentHitPoints).ToList();
 			var lowest = aliveCreatures.FirstOrDefault();
 			var highest = aliveCreatures.LastOrDefault();
 
@@ -1217,14 +1228,14 @@ namespace Game.Winforms
 			}
 		}
 
-		private void MimiDefinitelyJustAMirror(Creature creature)
+		private void MimiDefinitelyJustAMirror()
 		{
 			LogLine(Abilities.GetMimiDefinitelyJustAMirrorText());
 
-			var (_, c3) = GetMaxShieldCardFromOpponents(creature);
+			var (_, c3) = GetMaxShieldCardFromOpponents();
 			if (c3 != null)
 			{
-				SelectCard(creature, c3);
+				PlayCard(c3);
 			}
 		}
 
@@ -1252,11 +1263,11 @@ namespace Game.Winforms
 			}
 		}
 
-		private void MinscAndBooScoutingOuting(Creature creature)
+		private void MinscAndBooScoutingOuting()
 		{
 			LogLine(Abilities.GetMinscAndBooScoutingOutingText());
 
-			foreach (var creature1 in GetOpponents(creature))
+			foreach (var creature1 in GetOpponents())
 			{
 				var card2 = creature1.DrawDeck.CardDeck.FirstOrDefault();
 				if (card2 != null)
@@ -1294,43 +1305,43 @@ namespace Game.Winforms
 				}
 				else
 				{
-					creature.InHandDeck.CardDeck.Add(card2);
-					LogLine($"{creature.CreatureName} draws {card2.Name} from {creature1.CreatureName}");
+					_currentCreature.InHandDeck.CardDeck.Add(card2);
+					LogLine($"{_currentCreature.CreatureName} draws {card2.Name} from {creature1.CreatureName}");
 				}
 			}
 		}
 
-		private void MinscAndBooFavoredFrienemies(Creature creature)
+		private void MinscAndBooFavoredFrienemies()
 		{
 			LogLine(Abilities.GetMinscAndBooFavoredFrienemiesText());
 
 			_specialAttackBonusDamageOverride = true;
-			_currentTurn = creature;
+			_currentTurn = _currentCreature;
 		}
 
-		private void OriaxCleverDisguise(Creature creature)
+		private void OriaxCleverDisguise()
 		{
 			LogLine(Abilities.GetOriaxCleverDisguiseText());
 
 			_specialUntargetable = true;
-			_untargetableCreature = creature;
-			_currentTurn = creature;
+			_untargetableCreature = _currentCreature;
+			_currentTurn = _currentCreature;
 		}
 
-		private void OriaxSneakAttack(Creature creature)
+		private void OriaxSneakAttack()
 		{
 			LogLine(Abilities.GetOriaxSneakAttackText());
 
-			DestroyShieldCardInPlay(creature);
+			DestroyShieldCardInPlay();
 
 			// Play again action is on the card
 		}
 
-		private void OriaxPickPocket(Creature creature)
+		private void OriaxPickPocket()
 		{
 			LogLine(Abilities.GetOriaxPickPocketText());
 
-			var ops2 = GetOpponents(creature).ToList();
+			var ops2 = GetOpponents().ToList();
 			ops2.Shuffle();
 			var creatureToTarget = ops2.FirstOrDefault(x => x.DrawDeck.CardDeck.Count > 0);
 			if (creatureToTarget == null)
@@ -1348,19 +1359,19 @@ namespace Game.Winforms
 
 			creatureToTarget.DrawDeck.CardDeck.Remove(cardToPlay);
 
-			LogLine($"\t{creature.CreatureName} drew {cardToPlay.Name} from {creatureToTarget.CreatureName}.");
+			LogLine($"\t{_currentCreature.CreatureName} drew {cardToPlay.Name} from {creatureToTarget.CreatureName}.");
 
-			SelectCard(creature, cardToPlay);
+			PlayCard(cardToPlay);
 		}
 
-		private void SuthaWhirlingAxes(Creature creature)
+		private void SuthaWhirlingAxes()
 		{
 			LogLine(Abilities.GetSuthaWhirlingAxesText());
 
-			foreach (var opponent in GetOpponents(creature))
+			foreach (var opponent in GetOpponents())
 			{
-				Heal(creature);
-				Attack(creature, AttackType.Specific, opponent, false, true);
+				Heal();
+				Attack(AttackType.Specific, opponent, false, true);
 			}
 		}
 
@@ -1381,19 +1392,19 @@ namespace Game.Winforms
 			// Play again action is on the card
 		}
 
-		private void SuthaMightyToss(Creature creature)
+		private void SuthaMightyToss()
 		{
 			LogLine(Abilities.GetSuthaMightyTossText());
 
-			DestroyShieldCardInPlay(creature);
+			DestroyShieldCardInPlay();
 			// Draw action is on the card
 		}
 
 		#endregion
 
-		private (int? numOfShieldsOnCard, Creature highestShieldCharacter) DestroyShieldCardInPlay(Creature creature)
+		private (int? numOfShieldsOnCard, Creature highestShieldCharacter) DestroyShieldCardInPlay()
 		{
-			var (highestShieldCharacter, highestShieldCard) = GetMaxShieldCardFromOpponents(creature);
+			var (highestShieldCharacter, highestShieldCard) = GetMaxShieldCardFromOpponents();
 			if (highestShieldCharacter == null)
 			{
 				LogLine("\tThere are not any shields in play");
@@ -1413,9 +1424,9 @@ namespace Game.Winforms
 			return (numOfShieldsOnCard, highestShieldCharacter);
 		}
 
-		private (Creature, Card) GetMaxShieldCardFromOpponents(Creature creature)
+		private (Creature, Card) GetMaxShieldCardFromOpponents()
 		{
-			var charsWithShields = GetOpponents(creature).Where(x => x.NumberOfShields > 0).ToList();
+			var charsWithShields = GetOpponents().Where(x => x.NumberOfShields > 0).ToList();
 
 			if (!charsWithShields.Any())
 			{
@@ -1445,9 +1456,9 @@ namespace Game.Winforms
 			return (maxCreature, maxCard);
 		}
 
-		private IEnumerable<Creature> GetOpponents(Creature creature)
+		private IEnumerable<Creature> GetOpponents()
 		{
-			return _specialUntargetable ? _creatures.Where(x => x != creature && x != _untargetableCreature && x.CurrentHitPoints > 0) : _creatures.Where(x => x != creature && x.CurrentHitPoints > 0);
+			return _specialUntargetable ? _creatures.Where(x => x != _currentCreature && x != _untargetableCreature && x.CurrentHitPoints > 0) : _creatures.Where(x => x != _currentCreature && x.CurrentHitPoints > 0);
 		}
 
 		private IEnumerable<Creature> GetAliveCreatures()
@@ -1469,7 +1480,7 @@ namespace Game.Winforms
 			//if (_useConsoleLogs)
 			{
 				//Console.WriteLine(message);
-				textBoxMessages.Text = message + Environment.NewLine;
+				textBoxMessages.Text += message + Environment.NewLine;
 			}
 		}
 
