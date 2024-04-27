@@ -20,6 +20,7 @@ namespace Game.Winforms
 		private Creature _currentCreature;
 		private Card _currentCard;
 		private int _round;
+		private int _turn;
 
 		public Form1()
 		{
@@ -32,7 +33,7 @@ namespace Game.Winforms
 
 		private void Form1_Load(object sender, EventArgs e)
 		{
-			ShowOptions();
+			//ShowOptions();
 		}
 
 		private void newToolStripMenuItem_Click(object sender, EventArgs e)
@@ -69,6 +70,7 @@ namespace Game.Winforms
 			}
 
 			_round = 0;
+			_turn = 0;
 
 			IncrementRound();
 		}
@@ -77,18 +79,19 @@ namespace Game.Winforms
 		{
 			DisplayCharacterStatus();
 
-			_round++;
-			labelRoundCounter.Text = $"Round {_round}";
-
 			if (_currentCreature == null || _creatures.IndexOf(_currentCreature) == _creatures.Count - 1)
 			{
 				_currentCreature = _creatures.First();
+				_round++;
 			}
 			else
 			{
 				_currentCreature = _creatures[_creatures.IndexOf(_currentCreature) + 1];
 			}
 
+			_turn++;
+			labelRoundCounter.Text = $"Round {_round}, Turn {_turn}";
+			
 			PlayTurn();
 		}
 
@@ -96,7 +99,9 @@ namespace Game.Winforms
 		{
 			if (_currentCreature.CurrentHitPoints > 0)
 			{
-				labelPlayersTurnName.Text = $"It's {_currentCreature.CreatureName}'s turn";
+				string message = $"It's {_currentCreature.CreatureName}'s turn";
+				labelPlayersTurnName.Text = message;
+				MessageBox.Show(message);
 
 				DrawCards();
 
@@ -190,9 +195,9 @@ namespace Game.Winforms
 
 		private void SelectCard()
 		{
+			DisplayHand();
 			if (_currentCreature.IsHuman)
 			{
-				DisplayHand();
 
 				LogLine("Please select a card to play, select the line and press the play card button");
 			}
@@ -252,7 +257,7 @@ namespace Game.Winforms
 			//PlayTurn(NextCreature());
 		}
 
-		private void PlayCard(Card specificCard = null)
+		private void PlayCard(Card? specificCard = null)
 		{
 			if (_specialAttackAllOverride && _currentTurn != _currentCreature)
 			{
@@ -488,8 +493,6 @@ namespace Game.Winforms
 			return maxCard;
 		}
 
-
-
 		private void PlayShapeshift(Card card)
 		{
 			if (card.Name.Contains("Bear"))
@@ -502,7 +505,7 @@ namespace Game.Winforms
 			}
 		}
 
-		public void Attack(AttackType attackType, Creature target = null, bool bypassShields = false, bool isMightyPower = false, Creature specificCreature = null)
+		public void Attack(AttackType attackType, Creature? target = null, bool bypassShields = false, bool isMightyPower = false, Creature? specificCreature = null)
 		{
 			specificCreature ??= _currentCreature;
 
@@ -620,13 +623,13 @@ namespace Game.Winforms
 			}
 		}
 
-		public void Heal(Creature specificCreature = null)
+		public void Heal(Creature? specificCreature = null)
 		{
 			specificCreature ??= _currentCreature;
 			specificCreature.Heal();
 		}
 
-		public void DrawCard(Creature specificCreature = null)
+		public void DrawCard(Creature? specificCreature = null)
 		{
 			specificCreature ??= _currentCreature;
 
@@ -1402,7 +1405,7 @@ namespace Game.Winforms
 
 		#endregion
 
-		private (int? numOfShieldsOnCard, Creature highestShieldCharacter) DestroyShieldCardInPlay()
+		private (int? numOfShieldsOnCard, Creature? highestShieldCharacter) DestroyShieldCardInPlay()
 		{
 			var (highestShieldCharacter, highestShieldCard) = GetMaxShieldCardFromOpponents();
 			if (highestShieldCharacter == null)
@@ -1424,19 +1427,19 @@ namespace Game.Winforms
 			return (numOfShieldsOnCard, highestShieldCharacter);
 		}
 
-		private (Creature, Card) GetMaxShieldCardFromOpponents()
+		private (Creature?, Card?) GetMaxShieldCardFromOpponents()
 		{
+			int maxShields = 0;
+			Creature? maxCreature = null;
+			Card? maxCard = null;
+
 			var charsWithShields = GetOpponents().Where(x => x.NumberOfShields > 0).ToList();
 
 			if (!charsWithShields.Any())
 			{
 				LogLine("\tNo shields in play.");
-				return (null, null);
+				return (maxCreature, maxCard);
 			}
-
-			int maxShields = 0;
-			Creature maxCreature = null;
-			Card maxCard = null;
 
 			foreach (var charWithShield in charsWithShields)
 			{

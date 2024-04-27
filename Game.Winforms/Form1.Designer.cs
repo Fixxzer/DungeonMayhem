@@ -149,18 +149,18 @@
 			// labelRoundCounter
 			// 
 			labelRoundCounter.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-			labelRoundCounter.AutoSize = true;
-			labelRoundCounter.Location = new Point(810, 34);
+			labelRoundCounter.Location = new Point(672, 34);
 			labelRoundCounter.Name = "labelRoundCounter";
-			labelRoundCounter.Size = new Size(51, 15);
+			labelRoundCounter.Size = new Size(193, 15);
 			labelRoundCounter.TabIndex = 7;
 			labelRoundCounter.Text = "Round 1";
+			labelRoundCounter.TextAlign = ContentAlignment.TopRight;
 			// 
 			// labelPlayersTurnName
 			// 
 			labelPlayersTurnName.AutoSize = true;
 			labelPlayersTurnName.Font = new Font("Segoe UI", 14F);
-			labelPlayersTurnName.Location = new Point(318, 34);
+			labelPlayersTurnName.Location = new Point(404, 34);
 			labelPlayersTurnName.Name = "labelPlayersTurnName";
 			labelPlayersTurnName.Size = new Size(119, 25);
 			labelPlayersTurnName.TabIndex = 8;
@@ -168,12 +168,13 @@
 			// 
 			// listBoxHand
 			// 
+			listBoxHand.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
 			listBoxHand.FormattingEnabled = true;
 			listBoxHand.ItemHeight = 15;
 			listBoxHand.Location = new Point(262, 71);
 			listBoxHand.Margin = new Padding(3, 2, 3, 2);
 			listBoxHand.Name = "listBoxHand";
-			listBoxHand.Size = new Size(603, 79);
+			listBoxHand.Size = new Size(603, 94);
 			listBoxHand.TabIndex = 9;
 			// 
 			// label4
@@ -188,7 +189,7 @@
 			// label5
 			// 
 			label5.AutoSize = true;
-			label5.Location = new Point(276, 245);
+			label5.Location = new Point(276, 218);
 			label5.Name = "label5";
 			label5.Size = new Size(58, 15);
 			label5.TabIndex = 11;
@@ -196,17 +197,18 @@
 			// 
 			// textBoxMessages
 			// 
-			textBoxMessages.Location = new Point(262, 262);
+			textBoxMessages.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+			textBoxMessages.Location = new Point(262, 235);
 			textBoxMessages.Margin = new Padding(3, 2, 3, 2);
 			textBoxMessages.Multiline = true;
 			textBoxMessages.Name = "textBoxMessages";
-			textBoxMessages.ScrollBars = ScrollBars.Horizontal;
-			textBoxMessages.Size = new Size(603, 177);
+			textBoxMessages.ScrollBars = ScrollBars.Both;
+			textBoxMessages.Size = new Size(603, 204);
 			textBoxMessages.TabIndex = 12;
 			// 
 			// buttonPlayCard
 			// 
-			buttonPlayCard.Location = new Point(276, 154);
+			buttonPlayCard.Location = new Point(262, 169);
 			buttonPlayCard.Margin = new Padding(3, 2, 3, 2);
 			buttonPlayCard.Name = "buttonPlayCard";
 			buttonPlayCard.Size = new Size(82, 22);
